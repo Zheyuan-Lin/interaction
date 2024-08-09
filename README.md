@@ -43,6 +43,7 @@ Lumos was created by <a target="_blank" href="http://narechania.com">Arpit Narec
 - Hope!
 - Try `https://lumos-webapp-4aeadb3bf30d.herokuapp.com` in browser.
 - Check logs via `heroku logs --tail`
+- Restart via `heroku restart --app lumos-webapp`
 
 
 ## License
