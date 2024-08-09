@@ -36,7 +36,7 @@
                       <div class="input-group-prepend">
                         <div class="input-group-text"><i class="fa fa-table"></i></div>
                       </div>
-                      <ng-select name="datasetSelect" appendTo="body" [clearable]="false" [searchable]="false"
+                      <ng-select [disabled]="true" name="datasetSelect" appendTo="body" [clearable]="false" [searchable]="false"
                         [ngStyle]="{ width: getSelectWidth(objectKeys(appConfig)) }" [(ngModel)]="global.appMode"
                         (change)="initLumos()">
                         <ng-option *ngFor="let s of objectKeys(appConfig)" [value]="s"> {{s}} </ng-option>

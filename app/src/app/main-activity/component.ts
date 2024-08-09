@@ -109,7 +109,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
         this.global.appMode = "cars.csv";
         break;
       case "live":
-        this.global.appMode = "movies-w-year.csv";
+        this.global.appMode = "credit_risk.csv";
         break;
     }
     switch (this.global.appType) {
