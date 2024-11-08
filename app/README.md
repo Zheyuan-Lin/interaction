@@ -13,7 +13,6 @@ This folder contains the Lumos frontend code.
 - `npm install -g @angular/cli@7` - Install compatible [angular-cli](https://cli.angular.io/)
 - `export NODE_OPTIONS=--openssl-legacy-provider`
 - `npm install --legacy-peer-deps` installs all dependencies and devDependencies from package.json
-https://lumos-webapp-4aeadb3bf30d.herokuapp.com
 
 ## Run
 - Ensure that the **server** application is running in a separate terminal.
