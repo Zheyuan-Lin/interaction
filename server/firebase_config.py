@@ -2,7 +2,11 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 
+<<<<<<< HEAD
 cred = credentials.Certificate('/Users/soukasumi/Desktop/socratisprompts-firebase-adminsdk-fbsvc-fa125f63a4.json')  
+=======
+cred = credentials.Certificate('/Users/soukasumi/Desktop/socratisprompts-firebase-adminsdk-fbsvc-e2b189e793.json')  
+>>>>>>> 4bc01a4faf48f6ded0415d5836d7a06b7e75c598
 firebase_admin.initialize_app(cred)
 
 # Get Firestore client
