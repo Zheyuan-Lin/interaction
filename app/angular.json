@@ -26,17 +26,17 @@
               "node_modules/nouislider/distribute/nouislider.min.css",
               "src/styles.scss",
               "node_modules/jquery-ui-dist/jquery-ui.min.css",
-              "node_modules/bootstrap/dist/css/bootstrap.min.css",
+              "node_modules/bootstrap/dist/css/bootstrap.css",
               "node_modules/@ng-select/ng-select/themes/default.theme.css",
               "node_modules/overlayscrollbars/css/OverlayScrollbars.css"
             ],
             "scripts": [
-                      "node_modules/jquery/dist/jquery.min.js",
-                      "node_modules/jquery-ui-dist/jquery-ui.min.js",
-                      "node_modules/@popperjs/core/dist/umd/popper.min.js",
-                       "node_modules/bootstrap/dist/js/bootstrap.min.js"
-                      ],
-            "es5BrowserSupport": true
+              "node_modules/jquery/dist/jquery.min.js",
+              "node_modules/jquery-ui-dist/jquery-ui.min.js",
+              "node_modules/@popperjs/core/dist/umd/popper.min.js",
+              "node_modules/bootstrap/dist/js/bootstrap.min.js"
+            ],
+            "sourceMap": true
           },
           "configurations": {
             "production": {
