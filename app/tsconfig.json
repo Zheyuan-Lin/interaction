@@ -3,7 +3,7 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "baseUrl": "./",
-    "outDir": "./dist/out-tsc",
+    "outDir": "dist/out-tsc",
     "sourceMap": true,
     "declaration": false,
     "module": "es2015",
@@ -20,10 +20,7 @@
     "lib": [
       "es2018",
       "dom"
-    ],
-    "paths": {
-      "@app/*": ["src/app/*"]
-    }
+    ]
   },
   "angularCompilerOptions": {
     "disableTypeScriptVersionCheck": true

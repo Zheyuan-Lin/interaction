@@ -1,4 +1,4 @@
-id,name,age,gender,race,income,location,party,abortion_view,gun_control_view,immigration_view,voted_last_election
+voter_id,name,age,gender,race,income,location,party,abortion_view,gun_control_view,immigration_view,voted_last_election
 84891255,Darnell Johnson,43,Male,Black,High,Urban,Democrat,1.6,2.3,1.6,False
 76236989,Elizabeth Johnson,62,Female,White,High,Suburban,Democrat,2.2,1.4,0.9,True
 58261217,Woo Jung,86,Male,Asian,Low,Suburban,Democrat,2.2,1.4,1.5,False

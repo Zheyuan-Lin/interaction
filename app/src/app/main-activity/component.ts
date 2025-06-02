@@ -53,7 +53,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
   plotWidth: number;
   plotHeight: number;
   plotGroup: any;
-  userId: string;
+  userId: string | null = null;
 
   // User Insights Properties
   userInsight: string = '';
@@ -71,24 +71,31 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
     public global: SessionPage,
     private sanitizer: DomSanitizer
   ) {
-    this.objectKeys = Object.keys; // to help iterate over objects with *ngFor
-    this.objectValues = Object.values; // to help iterate over objects with *ngFor
-    this.math = Math; // to help iterate over objects with *ngFor
-    this.userConfig = UserConfig; // access all user settings here
-    this.appConfig = initializeAppModes(AppConfig); // access all app settings here
-    this.currentPlotType = null; // default plot type
-    this.currentPlotInstance = null; // default plot instance
+    this.objectKeys = Object.keys;
+    this.objectValues = Object.values;
+    this.math = Math;
+    this.userConfig = UserConfig;
+    this.appConfig = initializeAppModes(AppConfig);
+    this.currentPlotType = null;
+    this.currentPlotInstance = null;
     this.scatterPlotInstance = createPlotInstance(this, ScatterPlot);
     this.stripPlotInstance = createPlotInstance(this, StripPlot);
     this.dotPlotInstance = createPlotInstance(this, DotPlot);
     this.barChartInstance = createPlotInstance(this, BarChart);
     this.lineChartInstance = createPlotInstance(this, LineChart);
-    this.route.queryParams.subscribe((params) => {
-      if("level" in params){
-        this.global.appLevel = params["level"];
+    
+    // Get userId from URL or localStorage
+    this.route.queryParams.subscribe(params => {
+      const urlUserId = params['userId'];
+      if (urlUserId) {
+        this.userId = urlUserId;
+        localStorage.setItem('userId', urlUserId);
+      } else {
+        this.userId = null;
+        localStorage.removeItem('userId');
       }
-      this.userId = params['userId'] || localStorage.getItem('userId');
     });
+
     this.qFilterSliderConfig = (attribute) => {
       let attrConfig = this.appConfig[this.global.appMode]["attributes"][attribute];
       let formatter = { from: Number, to: this.utilsService.formatLargeNum };
