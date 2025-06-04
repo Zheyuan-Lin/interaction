@@ -8,6 +8,7 @@ export class Message {
   interactionType: string;
   participantId: string;
   data: object;
+  group: string;
 }
 
 export class Insight {

@@ -38,10 +38,6 @@ export class ChatService {
   }
 
   sendInteractionResponse(payload) {
-    this.vizSocket.emit("on_interaction", payload);
-  }
-
-  sendInteraction(payload) {  
     this.vizSocket.emit("recieve_interaction", payload);
   }
   getDisconnectEventResponse() {

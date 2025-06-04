@@ -1084,7 +1084,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
         name: dataset["yVar"],
         value: null
       },
-      group: "interaction_trace",
       eventX: null,
       eventY: null
     };
@@ -1105,7 +1104,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
     message.interactionType = InteractionTypes.ADD_FILTER;
     message.data = {
       attribute: attribute,
-      group: "interaction_trace",
       eventX: null,
       eventY: null
     };
@@ -1138,7 +1136,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
       message.interactionType = InteractionTypes.REMOVE_FILTER;
       message.data = {
         attribute: attribute,
-        group: "interaction_trace",
         eventX: null,
         eventY: null
       };
@@ -1160,7 +1157,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
     let message = this.utilsService.initializeNewMessage(this);
     message.interactionType = InteractionTypes.REMOVE_ALL_FILTERS;
     message.data = {
-      group: "interaction_trace",
       eventX: null,
       eventY: null
     };
@@ -1187,7 +1183,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
     let message = this.utilsService.initializeNewMessage(this);
     message.interactionType = InteractionTypes.REMOVE_ALL_ENCODINGS;
     message.data = {
-      group: "interaction_trace",
       eventX: null,
       eventY: null
     };
@@ -1217,7 +1212,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
           name: dataset["yVar"],
           value: null
         },
-        group: "interaction_trace",
         eventX: null,
         eventY: null
       };
@@ -1256,7 +1250,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
           name: dataset["yVar"],
           value: null
         },
-        group: "interaction_trace",
         eventX: null,
         eventY: null
       };
@@ -1280,7 +1273,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
         name: dataset["yVar"],
         value: null
       },
-      group: "interaction_trace",
       eventX: null,
       eventY: null
     };
@@ -1299,7 +1291,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
       message.interactionType = InteractionTypes.CHANGE_ATTRIBUTE_COLOR_BY_MODE;
       message.data = {
         colorBy: event,
-        group: "interaction_trace",
         eventX: null,
         eventY: null
       };
@@ -1321,7 +1312,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
       message.interactionType = InteractionTypes.CHANGE_VIS_COLOR_BY_MODE;
       message.data = {
         colorBy: dataset["colorByMode"],
-        group: "interaction_trace",
         eventX: null,
         eventY: null
       };
@@ -1340,7 +1330,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
       attribute: attribute,
       value: dataset["attributes"][attribute]["filterModel"],
       filterType: changeType,
-      group: "interaction_trace",
       eventX: null,
       eventY: null
     };

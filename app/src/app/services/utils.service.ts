@@ -187,7 +187,8 @@ export class UtilsService {
     (message.interactionDuration = 0),
     (message.interactionAt = this.getCurrentTime()),
     (message.participantId = localStorage.getItem("userId")),
-    (message.data = {});
+    (message.data = {}),
+    (message.group = "interaction_trace");
     return message;
   }
 
@@ -352,8 +353,7 @@ export class UtilsService {
             value: d["yVar"]
           },
           eventX: event.clientX,
-          eventY: event.clientY,
-          group: "interaction_trace"
+          eventY: event.clientY
         };
         context.chatService.sendInteractionResponse(message);
         /* Prepare and Send New Message - End */
@@ -390,8 +390,7 @@ export class UtilsService {
           value: d["yVar"]
         },
         eventX: event.clientX,
-        eventY: event.clientY,
-        group: "interaction_trace"
+        eventY: event.clientY
       };
       context.chatService.sendInteractionResponse(message);
       /* Prepare and Send New Message - End */
