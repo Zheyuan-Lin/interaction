@@ -59,7 +59,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
   userInsight: string = '';
   pastInsights: Array<{text: string, timestamp: string}> = [];
   canContinue: boolean = false;
-  timeRemaining: number = 20 * 60; // 20 minutes in seconds
+  timeRemaining: number = 5 * 60; // 20 minutes in seconds
   timerInterval: any;
   canContinueTime: boolean = false;
 
