@@ -75,7 +75,7 @@ export class StripPlot {
     // Add strips groups
     context.stripPlotConfig.stripsGroup = context.plotGroup.append("g").classed("strips", true);
 
-    // Add legend group, text and gradient rectangle
+    // Add legend group (empty for now)
     context.stripPlotConfig.legendGroup = context.plotGroup.append("g").classed("legend", true);
     if (context.global.appType !== "CONTROL") {
       const pad = 5; // padding (px) between elements

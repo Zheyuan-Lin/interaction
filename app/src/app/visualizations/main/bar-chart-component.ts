@@ -75,32 +75,8 @@ export class BarChart {
     // Add bar groups
     context.barChartConfig.barsGroup = context.plotGroup.append("g").classed("bars", true);
 
-    // Add legend group, text and gradient rectangle
+    // Add legend group (empty for now)
     context.barChartConfig.legendGroup = context.plotGroup.append("g").classed("legend", true);
-    if (context.global.appType !== "CONTROL") {
-      let xPos = context.plotWidth; // x position of element, gets updated dynamically
-      const pad = 5; // padding between elements
-      const gradRectWidth = context.plotWidth / 5; // width of gradient rectangle
-      const el = context.barChartConfig.legendGroup
-        .append("text")
-        .attr("transform", `translate(${xPos}, ${(-5 / 8) * plotMargins.top})`)
-        .attr("text-anchor", "end")
-        .text("More Focus");
-      xPos -= Math.abs(el.node().getBBox()["x"]) + gradRectWidth + pad;
-      context.barChartConfig.legendGroup
-        .append("rect")
-        .attr("transform", `translate(${xPos}, ${(-3 / 4) * plotMargins.top})`)
-        .attr("width", gradRectWidth)
-        .attr("height", (1 / 8) * plotMargins.top)
-        .style("rx", "4")
-        .style("fill", "url(#grad)");
-      xPos -= pad;
-      context.barChartConfig.legendGroup
-        .append("text")
-        .attr("transform", `translate(${xPos}, ${(-5 / 8) * plotMargins.top})`)
-        .attr("text-anchor", "end")
-        .text("Less Focus");
-    }
 
     // Create unsupported text to display if chart cannot render
     context.barChartConfig.unsupportedMessage = `
@@ -127,8 +103,9 @@ export class BarChart {
     // if there's no dataset don't update the bar chart
     if (!originalDatasetDict) return;
 
-    // Clear unsupported message
-    context.barChartConfig.barsGroup.select(".unsupported-text").remove();
+    // Clear ALL existing content first to ensure clean redraw
+    context.barChartConfig.barsGroup.selectAll("*").remove();
+    context.barChartConfig.legendGroup.selectAll("*").remove();
 
     // create raw data object
     let rawData = Object.keys(originalDatasetDict).map((id) => {
@@ -165,14 +142,42 @@ export class BarChart {
     let horizontal = false;
     let xAxisTitle = "";
     let yAxisTitle = "";
-    let aggTitle =
-      dataset["aggType"] == null ? "" : context.userConfig["aggregationMapping"][dataset["aggType"]].toUpperCase();
+    
+    // Get aggregation type from dataset - ensure it's properly handled
+    let aggType = dataset["aggType"];
+    if (!aggType || aggType === null || aggType === undefined) {
+      aggType = "count"; // Default fallback
+    }
+    
+    console.log('📊 BarChart update - aggType:', aggType, 'dataset aggType:', dataset["aggType"]);
+    
+    let aggTitle = "";
+    if (context.userConfig["aggregationMapping"] && context.userConfig["aggregationMapping"][aggType]) {
+      aggTitle = context.userConfig["aggregationMapping"][aggType].toUpperCase();
+    } else {
+      aggTitle = aggType.toUpperCase();
+    }
+    
+    console.log('📊 BarChart update - aggTitle:', aggTitle);
+    
     let xScale = context.barChartConfig.xScale;
     let xAxis = context.barChartConfig.xAxis;
     let yScale = context.barChartConfig.yScale;
     let yAxis = context.barChartConfig.yAxis;
     let xIsQ = utils.isMeasure(dataset, dataset["xVar"], "Q");
     let yIsQ = utils.isMeasure(dataset, dataset["yVar"], "Q");
+
+    // Debug logging to track aggregation changes
+    console.log("Updating chart with aggType:", aggType, "xVar:", dataset["xVar"], "yVar:", dataset["yVar"]);
+
+    // Check if we should create a grouped bar chart (both variables are categorical)
+    let shouldCreateGroupedBar = dataset["xVar"] && dataset["yVar"] && !xIsQ && !yIsQ;
+
+    if (shouldCreateGroupedBar) {
+      // Create grouped bar chart
+      this.createGroupedBarChart(context, prepared, dataset, utils);
+      return;
+    }
 
     if (dataset["yVar"] == null) {
       // yVar is NA => Vertical histogram
@@ -181,14 +186,14 @@ export class BarChart {
       if (xIsQ) {
         // [Q x NA] => Vertical binned histogram of count
         context.barChartConfig.legendGroup.style("display", "block");
-        const bins = d3.bin().value((d) => d["xVar"])(prepared);
+        const bins = d3.bin().value((d) => +d["xVar"])(prepared);
         buckets = bins.map((bin) => {
           const lb = utils.formatLargeNum(+bin.x0); // lowerbound
           const ub = utils.formatLargeNum(+bin.x1); // upperbound
           const val = utils.aggregate(bin, "count", "xVar");
           return [`[${lb}, ${ub})`, val, bin];
         });
-        xAxis.tickFormat((_, i) => buckets[i][0]);
+        xAxis.tickFormat((_, i) => buckets[i] ? buckets[i][0] : "");
         xAxisTitle = dataset["xVar"];
         yAxisTitle = `COUNT(${dataset["xVar"]})`;
       } else if (dataset["xVar"] !== null) {
@@ -197,14 +202,14 @@ export class BarChart {
         buckets = d3
           .rollups(
             prepared,
-            (v) => v.length,
+            (v) => utils.aggregate(v, "count", "xVar"),
             (d) => d["xVar"]
           )
           .sort(function (x, y) {
             return d3.ascending(x[0], y[0]); // sort buckets
           });
         buckets.forEach((d) => d.push(prepared.filter((obj) => obj["xVar"] == d[0])));
-        xAxis.tickFormat((_, i) => `${buckets[i][0]}`);
+        xAxis.tickFormat((_, i) => buckets[i] ? `${buckets[i][0]}` : "");
         xAxisTitle = dataset["xVar"];
         yAxisTitle = `COUNT(${dataset["xVar"]})`;
       } else {
@@ -216,10 +221,23 @@ export class BarChart {
           .attr("transform", `translate(${context.plotWidth / 2},${context.plotHeight / 2})`)
           .attr("text-anchor", "middle")
           .html(context.barChartConfig.unsupportedMessage);
+        return;
       }
       xScale.domain(d3.range(buckets.length));
       yScale = d3.scaleLinear().range([context.plotHeight, 0]);
-      yScale.domain([0, d3.max(buckets, (d) => d[1])]).nice();
+      
+      // Handle Y-axis range properly based on value distribution
+      let minVal = d3.min(buckets, (d) => d[1]) || 0;
+      let maxVal = d3.max(buckets, (d) => d[1]) || 0;
+      
+      if (minVal >= 0) {
+        yScale.domain([0, maxVal]).nice();
+      } else if (maxVal <= 0) {
+        yScale.domain([minVal, 0]).nice();
+      } else {
+        yScale.domain([minVal, maxVal]).nice();
+      }
+      
       yAxis = d3.axisLeft(yScale).tickFormat((d) => utils.formatLargeNum(+d));
     } else if (dataset["xVar"] == null) {
       // xVar is NA => Horizontal histogram
@@ -229,7 +247,7 @@ export class BarChart {
       if (yIsQ) {
         // [NA x Q] => Horizontal binned histogram of count
         context.barChartConfig.legendGroup.style("display", "block");
-        const bins = d3.bin().value((d) => d["yVar"])(prepared);
+        const bins = d3.bin().value((d) => +d["yVar"])(prepared);
         buckets = bins
           .map((bin) => {
             const lb = utils.formatLargeNum(+bin.x0); // lowerbound
@@ -238,7 +256,7 @@ export class BarChart {
             return [`[${lb}, ${ub})`, val, bin];
           })
           .reverse(); // sort buckets reverse vertically
-        yAxis.tickFormat((_, i) => buckets[i][0]);
+        yAxis.tickFormat((_, i) => buckets[i] ? buckets[i][0] : "");
         yAxisTitle = dataset["yVar"];
         xAxisTitle = `COUNT(${dataset["yVar"]})`;
       } else if (dataset["yVar"] !== null) {
@@ -247,14 +265,14 @@ export class BarChart {
         buckets = d3
           .rollups(
             prepared,
-            (v) => v.length,
+            (v) => utils.aggregate(v, "count", "yVar"),
             (d) => d["yVar"]
           )
           .sort(function (x, y) {
             return d3.ascending(y[0], x[0]); // sort buckets reverse vertically
           });
         buckets.forEach((d) => d.push(prepared.filter((obj) => obj["yVar"] == d[0])));
-        yAxis.tickFormat((_, i) => `${buckets[i][0]}`);
+        yAxis.tickFormat((_, i) => buckets[i] ? `${buckets[i][0]}` : "");
         yAxisTitle = dataset["yVar"];
         xAxisTitle = `COUNT(${dataset["yVar"]})`;
       } else {
@@ -266,10 +284,23 @@ export class BarChart {
           .attr("transform", `translate(${context.plotWidth / 2},${context.plotHeight / 2})`)
           .attr("text-anchor", "middle")
           .html(context.barChartConfig.unsupportedMessage);
+        return;
       }
       yScale.domain(d3.range(buckets.length));
       xScale = d3.scaleLinear().range([0, context.plotWidth]);
-      xScale.domain([0, d3.max(buckets, (d) => d[1])]).nice();
+      
+      // Handle X-axis range properly based on value distribution
+      let minVal = d3.min(buckets, (d) => d[1]) || 0;
+      let maxVal = d3.max(buckets, (d) => d[1]) || 0;
+      
+      if (minVal >= 0) {
+        xScale.domain([0, maxVal]).nice();
+      } else if (maxVal <= 0) {
+        xScale.domain([minVal, 0]).nice();
+      } else {
+        xScale.domain([minVal, maxVal]).nice();
+      }
+      
       xAxis = d3.axisBottom(xScale).tickFormat((d) => utils.formatLargeNum(+d));
     } else {
       // both xVar and yVar are defined
@@ -279,35 +310,53 @@ export class BarChart {
         xAxis = d3.axisBottom(xScale);
         xAxisTitle = dataset["xVar"];
         yAxisTitle = `${aggTitle}(${dataset["yVar"]})`;
+        
         if (xIsQ) {
           // [Q x Q] => bin x, rollup, aggregate y
           context.barChartConfig.legendGroup.style("display", "block");
-          const bins = d3.bin().value((d) => d["xVar"])(prepared);
+          const bins = d3.bin().value((d) => +d["xVar"])(prepared);
           buckets = bins.map((bin) => {
             const lb = utils.formatLargeNum(+bin.x0); // lowerbound
             const ub = utils.formatLargeNum(+bin.x1); // upperbound
-            const val = utils.aggregate(bin, dataset["aggType"], "yVar");
+            const val = utils.aggregate(bin, aggType, "yVar");
+            console.log('🔢 [Q x Q] aggregation:', { bin: `${lb}-${ub}`, aggType, val });
             return [`[${lb}, ${ub})`, val, bin];
           });
-          xAxis.tickFormat((_, i) => buckets[i][0]);
+          xAxis.tickFormat((_, i) => buckets[i] ? buckets[i][0] : "");
         } else {
           // [N/O/T x Q] => rollup, aggregate
           context.barChartConfig.legendGroup.style("display", "block");
           buckets = d3
             .rollups(
               prepared,
-              (v) => utils.aggregate(v, dataset["aggType"], "yVar"),
+              (v) => {
+                const val = utils.aggregate(v, aggType, "yVar");
+                console.log('🔢 [N/O/T x Q] aggregation:', { group: v[0]?.xVar, aggType, val, count: v.length });
+                return val;
+              },
               (d) => d["xVar"]
             )
             .sort(function (x, y) {
               return d3.ascending(x[0], y[0]); // sort buckets
             });
           buckets.forEach((d) => d.push(prepared.filter((obj) => obj["xVar"] == d[0])));
-          xAxis.tickFormat((i) => `${buckets[i][0]}`);
+          xAxis.tickFormat((_, i) => buckets[i] ? `${buckets[i][0]}` : "");
         }
         xScale.domain(d3.range(buckets.length));
         yScale = d3.scaleLinear().range([context.plotHeight, 0]);
-        yScale.domain([0, d3.max(buckets, (d) => d[1])]).nice();
+        
+        // Handle Y-axis range properly based on value distribution
+        let minVal = d3.min(buckets, (d) => d[1]) || 0;
+        let maxVal = d3.max(buckets, (d) => d[1]) || 0;
+        
+        if (minVal >= 0) {
+          yScale.domain([0, maxVal]).nice();
+        } else if (maxVal <= 0) {
+          yScale.domain([minVal, 0]).nice();
+        } else {
+          yScale.domain([minVal, maxVal]).nice();
+        }
+        
         yAxis = d3.axisLeft(yScale).tickFormat((d) => utils.formatLargeNum(+d));
       } else {
         // yVar is N/O/T => horizontal bar chart
@@ -320,18 +369,22 @@ export class BarChart {
           buckets = d3
             .rollups(
               prepared,
-              (v) => utils.aggregate(v, dataset["aggType"], "xVar"),
+              (v) => {
+                const val = utils.aggregate(v, aggType, "xVar");
+                console.log('🔢 [Q x N/O/T] aggregation:', { group: v[0]?.yVar, aggType, val, count: v.length });
+                return val;
+              },
               (d) => d["yVar"]
             )
             .sort(function (x, y) {
               return d3.ascending(y[0], x[0]); // sort buckets reverse vertically
             });
           buckets.forEach((d) => d.push(prepared.filter((obj) => obj["yVar"] == d[0])));
-          yAxis.tickFormat((i) => `${buckets[i][0]}`);
+          yAxis.tickFormat((_, i) => buckets[i] ? `${buckets[i][0]}` : "");
           yAxisTitle = dataset["yVar"];
           xAxisTitle = `${aggTitle}(${dataset["xVar"]})`;
         } else {
-          // [N/O/T x N/O/T] => unsupported
+          // [N/O/T x N/O/T] => unsupported (handled by grouped bar chart above)
           context.barChartConfig.legendGroup.style("display", "none");
           context.barChartConfig.barsGroup
             .append("text")
@@ -339,20 +392,59 @@ export class BarChart {
             .attr("transform", `translate(${context.plotWidth / 2},${context.plotHeight / 2})`)
             .attr("text-anchor", "middle")
             .html(context.barChartConfig.unsupportedMessage);
+          return;
         }
         yScale.domain(d3.range(buckets.length));
         xScale = d3.scaleLinear().range([0, context.plotWidth]);
-        xScale.domain([0, d3.max(buckets, (d) => d[1])]).nice();
+        
+        // Handle negative values properly for horizontal charts with aggregated data
+        let minVal = d3.min(buckets, (d) => d[1]) || 0;
+        let maxVal = d3.max(buckets, (d) => d[1]) || 0;
+        xScale.domain([minVal, maxVal]).nice();
+        
         xAxis = d3.axisBottom(xScale).tickFormat((d) => utils.formatLargeNum(+d));
       }
     }
+
+    // Force clear all axis content before redrawing
+    context.barChartConfig.xAxisGroup.selectAll("*").remove();
+    context.barChartConfig.yAxisGroup.selectAll("*").remove();
 
     // draw axes
     context.barChartConfig.xAxisGroup.call(xAxis);
     context.barChartConfig.yAxisGroup.call(yAxis);
 
+    // Add zero line for charts with negative values
+    if (buckets.length > 0) {
+      let hasNegativeValues = buckets.some(d => d[1] < 0);
+      if (hasNegativeValues) {
+        if (horizontal) {
+          context.barChartConfig.barsGroup
+            .append("line")
+            .attr("class", "zero-line")
+            .attr("x1", xScale(0))
+            .attr("x2", xScale(0))
+            .attr("y1", 0)
+            .attr("y2", context.plotHeight)
+            .attr("stroke", "#666")
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", "3,3");
+        } else {
+          context.barChartConfig.barsGroup
+            .append("line")
+            .attr("class", "zero-line")
+            .attr("x1", 0)
+            .attr("x2", context.plotWidth)
+            .attr("y1", yScale(0))
+            .attr("y2", yScale(0))
+            .attr("stroke", "#666")
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", "3,3");
+        }
+      }
+    }
+
     // draw axis titles
-    context.barChartConfig.xAxisGroup.select(".x.axis.title").remove();
     context.barChartConfig.xAxisGroup
       .append("g")
       .classed("x axis title", true)
@@ -363,7 +455,7 @@ export class BarChart {
       .attr("fill", "currentColor")
       .attr("dy", "3.71em")
       .text(xAxisTitle);
-    context.barChartConfig.yAxisGroup.select(".y.axis.title").remove();
+      
     context.barChartConfig.yAxisGroup
       .append("g")
       .classed("y axis title", true)
@@ -401,9 +493,6 @@ export class BarChart {
     context.barChartConfig.xAxis = xAxis;
     context.barChartConfig.yAxis = yAxis;
 
-    // REMOVE all bar groups first!
-    context.barChartConfig.barsGroup.selectAll(".post").remove();
-
     // JOIN data selection using bucket label as key
     let dataBound = context.barChartConfig.barsGroup.selectAll(".post").data(buckets, (d) => `${d[0]}`);
 
@@ -415,12 +504,24 @@ export class BarChart {
     enterSelection
       .append("text")
       .attr("transform", (d, i) => {
-        const x = horizontal ? xScale(0) + xScale(d[1]) + offset : xScale(i) + xScale.bandwidth() / 2;
-        const y = horizontal ? yScale(i) + yScale.bandwidth() / 2 + 4 : yScale(d[1]) - offset;
+        let x, y;
+        if (horizontal) {
+          x = d[1] >= 0 ? xScale(d[1]) + offset : xScale(d[1]) - offset;
+          y = yScale(i) + yScale.bandwidth() / 2 + 4;
+        } else {
+          x = xScale(i) + xScale.bandwidth() / 2;
+          y = d[1] >= 0 ? yScale(d[1]) - offset : yScale(d[1]) + offset + 10;
+        }
         return `translate(${x},${y})`;
       })
       .attr("display", "none")
-      .style("text-anchor", () => (horizontal ? "start" : "middle"))
+      .style("text-anchor", (d) => {
+        if (horizontal) {
+          return d[1] >= 0 ? "start" : "end";
+        } else {
+          return "middle";
+        }
+      })
       .text((d) => utils.formatLargeNum(+d[1]));
 
     // ENTER all bars
@@ -428,11 +529,11 @@ export class BarChart {
       .append("rect")
       .attr("transform", (d, i) => {
         if (horizontal) {
-          d["x"] = xScale(0);
+          d["x"] = d[1] >= 0 ? xScale(0) : xScale(d[1]);
           d["y"] = yScale(i);
         } else {
           d["x"] = xScale(i);
-          d["y"] = yScale(d[1]);
+          d["y"] = d[1] >= 0 ? yScale(d[1]) : yScale(0);
         }
         return `translate(${d["x"]},${d["y"]})`;
       })

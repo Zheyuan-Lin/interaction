@@ -62,6 +62,8 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
   timeRemaining: number = 5 * 60; // 20 minutes in seconds
   timerInterval: any;
   canContinueTime: boolean = false;
+  editingInsightIndex: number = -1; // Track which insight is being edited
+  editingInsightText: string = ''; // Store the text being edited
 
   constructor(
     private route: ActivatedRoute,
@@ -199,6 +201,9 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
       // and Quantitative (Q) attributes defined above for *ngFor purposes.
       dataset.attributeDatatypeList[attribute["datatype"]].push(attr);
     });
+
+    // Sort all attribute datatype lists alphabetically
+    this.sortAttributeDatatypeLists(dataset);
 
     // Load the data itself from file
     const fp = "./assets/" + context.global.appMode;
@@ -639,8 +644,18 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
    * one that's chosen.
    */
   updateVis() {
+    console.log('🔄 updateVis called with currentPlotType:', this.currentPlotType);
+    let dataset = this.appConfig[this.global.appMode];
+    console.log('📊 Current dataset state:', {
+      xVar: dataset["xVar"],
+      yVar: dataset["yVar"],
+      aggType: dataset["aggType"],
+      chartType: dataset["chartType"]
+    });
+    
     switch (this.currentPlotType) {
       case "scatterplot":
+        console.log('📈 Updating scatterplot...');
         // use VIS Matrix to determine which version to update
         let context = this;
         let dataset = context.appConfig[context.global.appMode];
@@ -655,21 +670,26 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         break;
       case "stripplot":
+        console.log('📊 Updating stripplot...');
         this.stripPlotInstance.update();
         break;
       case "barchart":
+        console.log('📊 Updating barchart...');
         this.barChartInstance.update();
         break;
       case "linechart":
+        console.log('📈 Updating linechart...');
         this.lineChartInstance.update();
         break;
       case null:
+        console.log('🗑️ Clearing plot container...');
         $("#plot_container").empty(); // clear existing plot
         break;
       default:
-        console.log(`Invalid plot type '${this.currentPlotType}'`);
+        console.log(`❌ Invalid plot type '${this.currentPlotType}'`);
         break;
     }
+    console.log('✅ updateVis completed');
   }
 
   /** ======================== INTERFACE METHODS ========================== */
@@ -1148,6 +1168,11 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
    * Disable all filters and reset the visualization.
    */
   removeFilters(updateVis = true) {
+    // Show confirmation dialog before removing all filters
+    if (!confirm("Are you sure you want to remove all filters?")) {
+      return; // User cancelled the operation
+    }
+    
     this.appConfig[this.global.appMode].attributeList.forEach((attribute) =>
       this.removeFilter(attribute, false, false)
     );
@@ -1192,8 +1217,30 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onChangeChart(event, reset = false, updateVis = true) {
     let dataset = this.appConfig[this.global.appMode];
+    console.log('🔍 onChangeChart called:', {
+      event: event,
+      reset: reset,
+      updateVis: updateVis,
+      currentChartType: dataset["chartType"],
+      xVar: dataset["xVar"],
+      yVar: dataset["yVar"]
+    });
+    
     if (reset) dataset["chartType"] = null;
     this.currentPlotType = dataset["chartType"];
+    
+    // Clear Y-axis when switching to bar chart since bar charts don't use Y-axis
+    if (dataset["chartType"] === "barchart" && dataset["yVar"]) {
+      dataset["yVar"] = null;
+    }
+    
+    console.log('🔍 After onChangeChart:', {
+      chartType: dataset["chartType"],
+      xVar: dataset["xVar"],
+      yVar: dataset["yVar"],
+      shouldShowAgg: this.shouldShowAggregationDropdown()
+    });
+    
     if (updateVis) {
       initializePlotInstance(this, this.currentPlotType);
       this.updateVis();
@@ -1222,6 +1269,16 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onChangeAttribute(event, axis, reset = false, updateVis = true) {
     let dataset = this.appConfig[this.global.appMode];
+    console.log('🔍 onChangeAttribute called:', {
+      event: event,
+      axis: axis,
+      reset: reset,
+      updateVis: updateVis,
+      xVar: dataset["xVar"],
+      yVar: dataset["yVar"],
+      chartType: dataset["chartType"]
+    });
+    
     switch (axis) {
       case "x_axis":
         if (reset) dataset["xVar"] = null;
@@ -1232,6 +1289,13 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
         if (dataset["yVar"]) dataset["attributeInteracted"][dataset["yVar"]] += 1;
         break;
     }
+    
+    console.log('🔍 After onChangeAttribute:', {
+      xVar: dataset["xVar"],
+      yVar: dataset["yVar"],
+      shouldShowAgg: this.shouldShowAggregationDropdown()
+    });
+    
     if (updateVis) {
       initializePlotInstance(this, this.currentPlotType);
       this.updateVis();
@@ -1258,8 +1322,38 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  onChangeAggregation(event, updateVis = true) {
+  /**
+   * Check if aggregation dropdown should be visible
+   */
+  shouldShowAggregationDropdown() {
     let dataset = this.appConfig[this.global.appMode];
+    let hasBothVars = dataset["xVar"] && dataset["yVar"];
+    let isBarOrLine = ['barchart', 'linechart'].indexOf(dataset["chartType"]) !== -1;
+    
+    console.log('🔍 Aggregation dropdown visibility check:', {
+      hasBothVars,
+      xVar: dataset["xVar"],
+      yVar: dataset["yVar"],
+      chartType: dataset["chartType"],
+      isBarOrLine,
+      shouldShow: hasBothVars && isBarOrLine
+    });
+    
+    return hasBothVars && isBarOrLine;
+  }
+
+  onChangeAggregation(event, updateVis = true) {
+    console.log('🚨 onChangeAggregation CALLED!', event);
+    let dataset = this.appConfig[this.global.appMode];
+    console.log('🔍 onChangeAggregation called:', {
+      event: event,
+      updateVis: updateVis,
+      currentAggType: dataset["aggType"],
+      xVar: dataset["xVar"],
+      yVar: dataset["yVar"],
+      chartType: dataset["chartType"]
+    });
+    
     /* Prepare and Send New Message - Start */
     let message = this.utilsService.initializeNewMessage(this);
     message.interactionType = InteractionTypes.CHANGE_AGGREGATION;
@@ -1278,10 +1372,8 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
     };
     this.chatService.sendInteractionResponse(message);
     /* Prepare and Send New Message - End */
-    if (updateVis) {
-      initializePlotInstance(this, this.currentPlotType);
-      this.updateVis();
-    }
+    
+    this.updateVis();
   }
 
   onChangeAttributeColorByMode(event, reset = false, updateVis = true) {
@@ -1548,6 +1640,133 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
     return 'Click to proceed';
   }
 
+  sortAttributeDatatypeLists(dataset) {
+    // Sort all attribute datatype lists alphabetically
+    Object.keys(dataset.attributeDatatypeList).forEach(datatype => {
+      dataset.attributeDatatypeList[datatype].sort((a, b) => {
+        const a1 = a.toLowerCase();
+        const b1 = b.toLowerCase();
+        if (a1 < b1) return -1;
+        if (a1 > b1) return 1;
+        return 0;
+      });
+    });
+  }
+
+  /**
+   * Delete an insight from the past insights list
+   */
+  deleteInsight(index: number) {
+    if (confirm("Are you sure you want to delete this insight?")) {
+      this.pastInsights.splice(index, 1);
+      // Update continue button state
+      this.canContinue = this.pastInsights.length >= 5;
+      
+      // Send deletion message to backend
+      let message = {
+        type: "delete_insight",
+        index: index,
+        participantId: localStorage.getItem('userId'),
+        timestamp: new Date().toISOString()
+      };
+      this.chatService.sendInsights(message);
+    }
+  }
+
+  /**
+   * Start editing an insight inline
+   */
+  startEditInsight(index: number) {
+    this.editingInsightIndex = index;
+    this.editingInsightText = this.pastInsights[index].text;
+  }
+
+  /**
+   * Save the edited insight
+   */
+  saveEditInsight() {
+    if (this.editingInsightText.trim() !== "") {
+      const index = this.editingInsightIndex;
+      const oldText = this.pastInsights[index].text;
+      
+      this.pastInsights[index].text = this.editingInsightText.trim();
+      this.pastInsights[index].timestamp = new Date().toLocaleString();
+      
+      // Send edit message to backend
+      let message = {
+        type: "edit_insight",
+        index: index,
+        oldText: oldText,
+        newText: this.editingInsightText.trim(),
+        participantId: localStorage.getItem('userId'),
+        timestamp: new Date().toISOString()
+      };
+      this.chatService.sendInsights(message);
+    }
+    
+    // Reset editing state
+    this.editingInsightIndex = -1;
+    this.editingInsightText = '';
+  }
+
+  /**
+   * Cancel editing an insight
+   */
+  cancelEditInsight() {
+    this.editingInsightIndex = -1;
+    this.editingInsightText = '';
+  }
+
+  /**
+   * Edit an insight in the past insights list
+   */
+  editInsight(index: number) {
+    const insight = this.pastInsights[index];
+    const newText = prompt("Edit your insight:", insight.text);
+    
+    if (newText !== null && newText.trim() !== "") {
+      this.pastInsights[index].text = newText.trim();
+      this.pastInsights[index].timestamp = new Date().toLocaleString();
+      
+      // Send edit message to backend
+      let message = {
+        type: "edit_insight",
+        index: index,
+        oldText: insight.text,
+        newText: newText.trim(),
+        participantId: localStorage.getItem('userId'),
+        timestamp: new Date().toISOString()
+      };
+      this.chatService.sendInsights(message);
+    }
+  }
+
+  /**
+   * Check if there are quantitative attributes with -3 to +3 scale
+   */
+  hasQuantitativeAttributesWithScale() {
+    let dataset = this.appConfig[this.global.appMode];
+    if (!dataset || !dataset.attributeDatatypeList || !dataset.attributeDatatypeList['Q']) {
+      return false;
+    }
+    
+    // Check if any quantitative attributes have min: -3 and max: 3
+    return dataset.attributeDatatypeList['Q'].some(attr => {
+      const attrConfig = dataset.attributes[attr];
+      return attrConfig && 
+             attrConfig.min === -3.0 && 
+             attrConfig.max === 3.0;
+    });
+  }
+
+  /**
+   * Test method to manually trigger aggregation change
+   */
+  testAggregationChange() {
+    console.log('🧪 Testing aggregation change manually');
+    this.onChangeAggregation('test', true);
+  }
+
 }
 
 /** ======================= CONVENIENCE FUNCTIONS ========================= */
@@ -1619,18 +1838,19 @@ function createPlotInstance(context, plotObject) {
 function initializePlotInstance(context, chartType) {
   switch (chartType) {
     case "scatterplot":
-      // use VIS Matrix to determine which version to initialize
       let dataset = context.appConfig[context.global.appMode];
       const xVar = dataset["xVar"];
       const yVar = dataset["yVar"];
       const xIsQ = context.utilsService.isMeasure(dataset, xVar, "Q");
       const yIsQ = context.utilsService.isMeasure(dataset, yVar, "Q");
-      if (!(xVar || yVar) || xIsQ || yIsQ) {
-        context.currentPlotInstance = "scatterplot";
-        context.scatterPlotInstance.initialize();
-      } else {
+      const xIsCat = context.utilsService.isMeasure(dataset, xVar, "N") || context.utilsService.isMeasure(dataset, xVar, "O");
+      const yIsCat = context.utilsService.isMeasure(dataset, yVar, "N") || context.utilsService.isMeasure(dataset, yVar, "O");
+      if (xVar && yVar && xIsCat && yIsCat) {
         context.currentPlotInstance = "dotplot";
         context.dotPlotInstance.initialize();
+      } else {
+        context.currentPlotInstance = "scatterplot";
+        context.scatterPlotInstance.initialize();
       }
       break;
     case "stripplot":
