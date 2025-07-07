@@ -64,6 +64,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
   canContinueTime: boolean = false;
   editingInsightIndex: number = -1; // Track which insight is being edited
   editingInsightText: string = ''; // Store the text being edited
+  isDataShown: boolean = false; // Control data preview visibility
 
   constructor(
     private route: ActivatedRoute,
@@ -644,18 +645,10 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
    * one that's chosen.
    */
   updateVis() {
-    console.log('🔄 updateVis called with currentPlotType:', this.currentPlotType);
     let dataset = this.appConfig[this.global.appMode];
-    console.log('📊 Current dataset state:', {
-      xVar: dataset["xVar"],
-      yVar: dataset["yVar"],
-      aggType: dataset["aggType"],
-      chartType: dataset["chartType"]
-    });
     
     switch (this.currentPlotType) {
       case "scatterplot":
-        console.log('📈 Updating scatterplot...');
         // use VIS Matrix to determine which version to update
         let context = this;
         let dataset = context.appConfig[context.global.appMode];
@@ -670,26 +663,21 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         break;
       case "stripplot":
-        console.log('📊 Updating stripplot...');
         this.stripPlotInstance.update();
         break;
       case "barchart":
-        console.log('📊 Updating barchart...');
         this.barChartInstance.update();
         break;
       case "linechart":
-        console.log('📈 Updating linechart...');
         this.lineChartInstance.update();
         break;
       case null:
-        console.log('🗑️ Clearing plot container...');
         $("#plot_container").empty(); // clear existing plot
         break;
       default:
-        console.log(`❌ Invalid plot type '${this.currentPlotType}'`);
+        console.log(`Invalid plot type '${this.currentPlotType}'`);
         break;
     }
-    console.log('✅ updateVis completed');
   }
 
   /** ======================== INTERFACE METHODS ========================== */
@@ -1217,14 +1205,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onChangeChart(event, reset = false, updateVis = true) {
     let dataset = this.appConfig[this.global.appMode];
-    console.log('🔍 onChangeChart called:', {
-      event: event,
-      reset: reset,
-      updateVis: updateVis,
-      currentChartType: dataset["chartType"],
-      xVar: dataset["xVar"],
-      yVar: dataset["yVar"]
-    });
     
     if (reset) dataset["chartType"] = null;
     this.currentPlotType = dataset["chartType"];
@@ -1233,13 +1213,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
     if (dataset["chartType"] === "barchart" && dataset["yVar"]) {
       dataset["yVar"] = null;
     }
-    
-    console.log('🔍 After onChangeChart:', {
-      chartType: dataset["chartType"],
-      xVar: dataset["xVar"],
-      yVar: dataset["yVar"],
-      shouldShowAgg: this.shouldShowAggregationDropdown()
-    });
     
     if (updateVis) {
       initializePlotInstance(this, this.currentPlotType);
@@ -1269,15 +1242,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onChangeAttribute(event, axis, reset = false, updateVis = true) {
     let dataset = this.appConfig[this.global.appMode];
-    console.log('🔍 onChangeAttribute called:', {
-      event: event,
-      axis: axis,
-      reset: reset,
-      updateVis: updateVis,
-      xVar: dataset["xVar"],
-      yVar: dataset["yVar"],
-      chartType: dataset["chartType"]
-    });
     
     switch (axis) {
       case "x_axis":
@@ -1289,12 +1253,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
         if (dataset["yVar"]) dataset["attributeInteracted"][dataset["yVar"]] += 1;
         break;
     }
-    
-    console.log('🔍 After onChangeAttribute:', {
-      xVar: dataset["xVar"],
-      yVar: dataset["yVar"],
-      shouldShowAgg: this.shouldShowAggregationDropdown()
-    });
     
     if (updateVis) {
       initializePlotInstance(this, this.currentPlotType);
@@ -1330,30 +1288,19 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
     let hasBothVars = dataset["xVar"] && dataset["yVar"];
     let isBarOrLine = ['barchart', 'linechart'].indexOf(dataset["chartType"]) !== -1;
     
-    console.log('🔍 Aggregation dropdown visibility check:', {
-      hasBothVars,
-      xVar: dataset["xVar"],
-      yVar: dataset["yVar"],
-      chartType: dataset["chartType"],
-      isBarOrLine,
-      shouldShow: hasBothVars && isBarOrLine
-    });
+    // Check if both variables are quantitative (can be aggregated)
+    let xIsQ = this.utilsService.isMeasure(dataset, dataset["xVar"], "Q");
+    let yIsQ = this.utilsService.isMeasure(dataset, dataset["yVar"], "Q");
+    let hasQuantitativeVar = xIsQ || yIsQ;
     
-    return hasBothVars && isBarOrLine;
+    // Only show aggregation if we have both variables, it's a bar/line chart, and at least one variable is quantitative
+    return hasBothVars && isBarOrLine && hasQuantitativeVar;
   }
 
   onChangeAggregation(event, updateVis = true) {
-    console.log('🚨 onChangeAggregation CALLED!', event);
     let dataset = this.appConfig[this.global.appMode];
-    console.log('🔍 onChangeAggregation called:', {
-      event: event,
-      updateVis: updateVis,
-      currentAggType: dataset["aggType"],
-      xVar: dataset["xVar"],
-      yVar: dataset["yVar"],
-      chartType: dataset["chartType"]
-    });
-    
+        
+    this.updateVis();
     /* Prepare and Send New Message - Start */
     let message = this.utilsService.initializeNewMessage(this);
     message.interactionType = InteractionTypes.CHANGE_AGGREGATION;
@@ -1372,8 +1319,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
     };
     this.chatService.sendInteractionResponse(message);
     /* Prepare and Send New Message - End */
-    
-    this.updateVis();
+
   }
 
   onChangeAttributeColorByMode(event, reset = false, updateVis = true) {
@@ -1416,8 +1362,9 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
     let dataset = this.appConfig[this.global.appMode];
     dataset["attributeInteracted"][attribute] += 1;
     /* Prepare and Send New Message - Start */
-    let message = this.utilsService.initializeNewMessage(this);
-    message.interactionType = InteractionTypes.CHANGE_FILTER;
+        /* Prepare and Send New Message - End */
+        this.updateVis();
+    let message = this.utilsService.initializeNewMessage(InteractionTypes.CHANGE_FILTER);
     message.data = {
       attribute: attribute,
       value: dataset["attributes"][attribute]["filterModel"],
@@ -1426,8 +1373,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
       eventY: null
     };
     this.chatService.sendInteractionResponse(message);
-    /* Prepare and Send New Message - End */
-    this.updateVis();
+
   }
 
   /**
@@ -1763,8 +1709,18 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
    * Test method to manually trigger aggregation change
    */
   testAggregationChange() {
-    console.log('🧪 Testing aggregation change manually');
     this.onChangeAggregation('test', true);
+  }
+
+  testXAxisChange() {
+    this.onChangeAttribute('test', 'x_axis', false, true);
+  }
+
+  /**
+   * Toggle the data preview visibility
+   */
+  toggleDataPreview() {
+    this.isDataShown = !this.isDataShown;
   }
 
 }

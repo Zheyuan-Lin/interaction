@@ -132,6 +132,7 @@ export var UserConfig = {
   aggregations: ["count", "avg", "min", "max", "sum"],
   awarenessModes: ["Percentage", "Raw"],
   colorScales: ["Divergent", "Sequential"],
+  colorByModes: ["abs", "rel", "binary"],
   attributeControlSortByModes: ["default", "reverse-dtype", "dtype", "A-Z, 0-9", "Z-A, 9-0"],
   attributeSortByModes: ["default", "reverse-dtype", "dtype", "Focus 1-0", "Focus 0-1", "A-Z, 0-9", "Z-A, 9-0"],
   awarenessSortByModes: ["Bias 1-0", "Bias 0-1", "A-Z, 0-9", "Z-A, 9-0"],
@@ -168,6 +169,11 @@ export var UserConfig = {
   colorScaleMapping: {
     Divergent: "Divergent",
     Sequential: "Sequential",
+  },
+  colorByModeMapping: {
+    abs: "Absolute",
+    rel: "Relative",
+    binary: "Binary",
   },
   sortByModeMapping: {
     default: "Default",

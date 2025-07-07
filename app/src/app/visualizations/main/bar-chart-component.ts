@@ -149,7 +149,6 @@ export class BarChart {
       aggType = "count"; // Default fallback
     }
     
-    console.log('📊 BarChart update - aggType:', aggType, 'dataset aggType:', dataset["aggType"]);
     
     let aggTitle = "";
     if (context.userConfig["aggregationMapping"] && context.userConfig["aggregationMapping"][aggType]) {
@@ -158,7 +157,7 @@ export class BarChart {
       aggTitle = aggType.toUpperCase();
     }
     
-    console.log('📊 BarChart update - aggTitle:', aggTitle);
+ 
     
     let xScale = context.barChartConfig.xScale;
     let xAxis = context.barChartConfig.xAxis;
@@ -167,11 +166,18 @@ export class BarChart {
     let xIsQ = utils.isMeasure(dataset, dataset["xVar"], "Q");
     let yIsQ = utils.isMeasure(dataset, dataset["yVar"], "Q");
 
-    // Debug logging to track aggregation changes
-    console.log("Updating chart with aggType:", aggType, "xVar:", dataset["xVar"], "yVar:", dataset["yVar"]);
+
 
     // Check if we should create a grouped bar chart (both variables are categorical)
     let shouldCreateGroupedBar = dataset["xVar"] && dataset["yVar"] && !xIsQ && !yIsQ;
+
+    console.log("Bar chart debugging:", {
+      xVar: dataset["xVar"],
+      yVar: dataset["yVar"],
+      xIsQ: xIsQ,
+      yIsQ: yIsQ,
+      shouldCreateGroupedBar: shouldCreateGroupedBar
+    });
 
     if (shouldCreateGroupedBar) {
       // Create grouped bar chart
@@ -289,7 +295,7 @@ export class BarChart {
       yScale.domain(d3.range(buckets.length));
       xScale = d3.scaleLinear().range([0, context.plotWidth]);
       
-      // Handle X-axis range properly based on value distribution
+      // Handle negative values properly for horizontal charts with aggregated data
       let minVal = d3.min(buckets, (d) => d[1]) || 0;
       let maxVal = d3.max(buckets, (d) => d[1]) || 0;
       
@@ -331,7 +337,7 @@ export class BarChart {
               prepared,
               (v) => {
                 const val = utils.aggregate(v, aggType, "yVar");
-                console.log('🔢 [N/O/T x Q] aggregation:', { group: v[0]?.xVar, aggType, val, count: v.length });
+      
                 return val;
               },
               (d) => d["xVar"]
@@ -371,7 +377,7 @@ export class BarChart {
               prepared,
               (v) => {
                 const val = utils.aggregate(v, aggType, "xVar");
-                console.log('🔢 [Q x N/O/T] aggregation:', { group: v[0]?.yVar, aggType, val, count: v.length });
+        
                 return val;
               },
               (d) => d["yVar"]
@@ -400,7 +406,14 @@ export class BarChart {
         // Handle negative values properly for horizontal charts with aggregated data
         let minVal = d3.min(buckets, (d) => d[1]) || 0;
         let maxVal = d3.max(buckets, (d) => d[1]) || 0;
-        xScale.domain([minVal, maxVal]).nice();
+        
+        if (minVal >= 0) {
+          xScale.domain([0, maxVal]).nice();
+        } else if (maxVal <= 0) {
+          xScale.domain([minVal, 0]).nice();
+        } else {
+          xScale.domain([minVal, maxVal]).nice();
+        }
         
         xAxis = d3.axisBottom(xScale).tickFormat((d) => utils.formatLargeNum(+d));
       }
@@ -537,8 +550,20 @@ export class BarChart {
         }
         return `translate(${d["x"]},${d["y"]})`;
       })
-      .attr("height", (d) => (horizontal ? yScale.bandwidth() : yScale(0) - yScale(d[1])))
-      .attr("width", (d) => (horizontal ? xScale(d[1]) - xScale(0) : xScale.bandwidth()))
+      .attr("height", (d) => {
+        if (horizontal) {
+          return yScale.bandwidth();
+        } else {
+          return Math.abs(yScale(d[1]) - yScale(0));
+        }
+      })
+      .attr("width", (d) => {
+        if (horizontal) {
+          return Math.abs(xScale(d[1]) - xScale(0));
+        } else {
+          return xScale.bandwidth();
+        }
+      })
       .style("fill", (d) => {
         // fill based on interactions with underlying data points!
         if (context.global.appType == "CONTROL") return "white";
@@ -583,22 +608,32 @@ export class BarChart {
       })
       .on("mouseover", function (event, d) {
         d3.select(this.parentNode).select("text").attr("display", "block");
-        utils.mouseoverGroup(context, event, this, {
-          aggName: dataset["aggType"] == null ? "count" : dataset["aggType"],
+        d3.select(this)
+          .style("stroke", "brown")
+          .style("stroke-width", "3px");
+        
+        // Add hover functionality to show grouped data details
+        context.utilsService.mouseoverGroup(context, event, this, {
+          aggName: aggType,
           aggAxis: horizontal ? "x-axis" : "y-axis",
           binLabel: d[0],
           binValue: d[1],
-          binData: d[2],
+          binData: d[2] || [], // Use the bin data if available, otherwise empty array
         });
       })
       .on("mouseout", function (event, d) {
         d3.select(this.parentNode).select("text").attr("display", "none");
-        utils.mouseoutGroup(context, event, {
-          aggName: dataset["aggType"] == null ? "NA" : dataset["aggType"],
+        d3.select(this)
+          .style("stroke", "black")
+          .style("stroke-width", "1px");
+        
+        // Remove hover functionality
+        context.utilsService.mouseoutGroup(context, event, {
+          aggName: aggType,
           aggAxis: horizontal ? "x-axis" : "y-axis",
           binLabel: d[0],
           binValue: d[1],
-          binData: d[2],
+          binData: d[2] || [],
         });
       });
 
@@ -646,5 +681,214 @@ export class BarChart {
         }
       }
     }
+  }
+
+  /**
+   * Create grouped bar chart when both x and y variables are categorical
+   */
+  createGroupedBarChart(context, prepared, dataset, utils) {
+    // Get unique values for both x and y variables
+    const xValuesSet = new Set<string>();
+    const yValuesSet = new Set<string>();
+    
+    prepared.forEach(d => {
+      xValuesSet.add(String(d.xVar));
+      yValuesSet.add(String(d.yVar));
+    });
+    
+    const xValues = Array.from(xValuesSet).sort() as string[];
+    const yValues = Array.from(yValuesSet).sort() as string[];
+    
+    // Create grouped data structure
+    const groupedData = [];
+    xValues.forEach(xVal => {
+      yValues.forEach(yVal => {
+        const groupData = prepared.filter(d => String(d.xVar) === xVal && String(d.yVar) === yVal);
+        groupedData.push({
+          xVal: xVal,
+          yVal: yVal,
+          count: groupData.length,
+          data: groupData
+        });
+      });
+    });
+
+    // Set up scales
+    const xScale = d3.scaleBand()
+      .domain(xValues)
+      .range([0, context.plotWidth])
+      .padding(0.1);
+
+    const yScale = d3.scaleLinear()
+      .range([context.plotHeight, 0]);
+
+    // Find max count for y scale domain
+    const maxCount = d3.max(groupedData, d => d.count) || 0;
+    yScale.domain([0, maxCount]).nice();
+
+    // Create color scale for y values
+    const colorScale = d3.scaleOrdinal()
+      .domain(yValues)
+      .range(d3.schemeCategory10);
+
+    // Clear existing content
+    context.barChartConfig.barsGroup.selectAll("*").remove();
+    context.barChartConfig.legendGroup.selectAll("*").remove();
+
+    // Draw axes
+    const xAxis = d3.axisBottom(xScale);
+    const yAxis = d3.axisLeft(yScale).tickFormat(d => utils.formatLargeNum(+d));
+
+    context.barChartConfig.xAxisGroup.selectAll("*").remove();
+    context.barChartConfig.yAxisGroup.selectAll("*").remove();
+
+    context.barChartConfig.xAxisGroup.call(xAxis);
+    context.barChartConfig.yAxisGroup.call(yAxis);
+
+    // Add axis titles
+    context.barChartConfig.xAxisGroup
+      .append("g")
+      .classed("x axis title", true)
+      .attr("opacity", 1)
+      .attr("transform", `translate(${context.plotWidth / 2}, 0)`)
+      .append("text")
+      .attr("text-anchor", "middle")
+      .attr("fill", "currentColor")
+      .attr("dy", "3.71em")
+      .text(dataset["xVar"]);
+
+    context.barChartConfig.yAxisGroup
+      .append("g")
+      .classed("y axis title", true)
+      .attr("opacity", 1)
+      .attr("transform", `translate(-30, ${context.plotHeight / 2})`)
+      .append("text")
+      .attr("fill", "currentColor")
+      .text(`COUNT`);
+
+    // Calculate bar width and positioning
+    const barWidth = xScale.bandwidth() / yValues.length;
+    const barPadding = 2;
+
+    // Create bars
+    const barGroups = context.barChartConfig.barsGroup
+      .selectAll(".bar-group")
+      .data(groupedData)
+      .enter()
+      .append("g")
+      .classed("bar-group", true)
+      .attr("transform", d => {
+        const xPos = xScale(d.xVal) + (yValues.indexOf(d.yVal) * barWidth);
+        return `translate(${xPos}, 0)`;
+      });
+
+    // Add bars
+    barGroups
+      .append("rect")
+      .attr("width", barWidth - barPadding)
+      .attr("height", d => context.plotHeight - yScale(d.count))
+      .attr("y", d => yScale(d.count))
+      .style("fill", d => {
+        // Apply coloring based on interactions
+        if (context.global.appType == "CONTROL") return colorScale(d.yVal);
+        
+        switch (dataset["colorByMode"]) {
+          case "abs":
+            const sumInteracted = d.data.reduce(utils.sumTimesVisited, 0) as number;
+            const sumVisits = prepared.reduce(utils.sumTimesVisited, 0) as number;
+            return sumInteracted == 0
+              ? colorScale(d.yVal)
+              : context.userConfig.focusSequentialColorScale(sumInteracted / sumVisits);
+          case "rel":
+            const maxInteracted = d.data.reduce(utils.maxTimesVisited, 0) as number;
+            const maxVisits = prepared.reduce(utils.maxTimesVisited, 0) as number;
+            return maxInteracted == 0
+              ? colorScale(d.yVal)
+              : context.userConfig.focusSequentialColorScale(maxInteracted / maxVisits);
+          case "binary":
+            const visited = d.data.some((el) => el["timesVisited"] > 0);
+            return !visited ? colorScale(d.yVal) : context.userConfig.focusSequentialColorScale(1);
+          default:
+            return colorScale(d.yVal);
+        }
+      })
+      .style("fill-opacity", 0.8)
+      .style("stroke", d => (d.data.reduce((a, b) => a || b["selected"], false) ? "brown" : "black"))
+      .style("stroke-width", d => (d.data.reduce((a, b) => a || b["selected"], false) ? "3px" : "1px"))
+      .style("stroke-dasharray", d => {
+        const countSelected = d.data.filter((o) => o["selected"]).length;
+        return countSelected < d.data.length && countSelected > 0 ? "4" : "none";
+      })
+      .style("cursor", "pointer")
+      .on("click", function(event, d) {
+        if (context.global.appType === "ADMIN") {
+          utils.clickGroup(context, event, {
+            aggName: "count",
+            aggAxis: "y-axis",
+            binLabel: `${d.xVal} - ${d.yVal}`,
+            binValue: d.count,
+            binData: d.data,
+          });
+        }
+      })
+      .on("mouseover", function(event, d) {
+        d3.select(this)
+          .style("stroke", "brown")
+          .style("stroke-width", "3px");
+        
+        // Add hover functionality
+        context.utilsService.mouseoverGroup(context, event, this, {
+          aggName: "count",
+          aggAxis: "y-axis",
+          binLabel: `${d.xVal} - ${d.yVal}`,
+          binValue: d.count,
+          binData: d.data,
+        });
+      })
+      .on("mouseout", function(event, d) {
+        d3.select(this)
+          .style("stroke", "black")
+          .style("stroke-width", "1px");
+        
+        // Remove hover functionality
+        context.utilsService.mouseoutGroup(context, event, {
+          aggName: "count",
+          aggAxis: "y-axis",
+          binLabel: `${d.xVal} - ${d.yVal}`,
+          binValue: d.count,
+          binData: d.data,
+        });
+      });
+
+    // Add legend
+    const legendGroup = context.barChartConfig.legendGroup
+      .append("g")
+      .attr("transform", `translate(${context.plotWidth - 100}, 20)`);
+
+    yValues.forEach((yVal, i) => {
+      const legendItem = legendGroup
+        .append("g")
+        .attr("transform", `translate(0, ${i * 20})`);
+
+      legendItem
+        .append("rect")
+        .attr("width", 15)
+        .attr("height", 15)
+        .style("fill", colorScale(yVal as string))
+        .style("stroke", "black")
+        .style("stroke-width", "1px");
+
+      legendItem
+        .append("text")
+        .attr("x", 20)
+        .attr("y", 12)
+        .text(yVal);
+    });
+
+    // Store scales for potential updates
+    context.barChartConfig.xScale = xScale;
+    context.barChartConfig.yScale = yScale;
+    context.barChartConfig.xAxis = xAxis;
+    context.barChartConfig.yAxis = yAxis;
   }
 }
