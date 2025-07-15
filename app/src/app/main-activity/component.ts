@@ -132,7 +132,9 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
         this.global.appMode = "cars.csv";
         break;
       case "live":
-        this.global.appMode = "synthetic_voters_v14.csv";
+        //this.global.appMode = "credit_risk.csv";
+        this.global.appMode = "tutorial_dataset_movie.csv";
+        //this.global.appMode = "euro.csv";
         break;
     }
     switch (this.global.appType) {
