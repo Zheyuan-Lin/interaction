@@ -1,0 +1,15 @@
+{
+  "name": "lumos",
+  "description": "Angular application deployed to Heroku",
+  "repository": "https://github.com/yourusername/lumos",
+  "logo": "https://node-js-sample.herokuapp.com/node.png",
+  "keywords": ["angular", "node", "express"],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+} 
