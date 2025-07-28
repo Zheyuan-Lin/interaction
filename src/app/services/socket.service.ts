@@ -2,7 +2,7 @@
 import { Injectable } from "@angular/core";
 import { Socket } from "ngx-socket-io";
 import { map } from "rxjs/operators";
-import { SessionPage } from "../models/config";
+import { SessionPage, InteractionTypes } from "../models/config";
 import { Observable, Subject } from "rxjs";
 
 @Injectable()
@@ -112,6 +112,138 @@ export class ChatService {
   sendInteraction(payload) {  
     this.vizSocket.emit("recieve_interaction", payload);
   }
+
+  // Document Interaction Methods
+  sendDocumentInteraction(interactionType: string, data: any) {
+    const participantId = localStorage.getItem('userId') || "anonymous";
+    const payload = {
+      interactionType: interactionType,
+      data: data,
+      participantId: participantId,
+      interactionAt: new Date().toISOString(),
+      appMode: this.global.appMode,
+      appType: this.global.appType,
+      appLevel: this.global.appLevel,
+      group: "control"  // Add the group field that server expects
+    };
+    console.log('Sending document interaction:', payload);
+    this.vizSocket.emit("recieve_interaction", payload);
+  }
+
+  // Filter Interactions
+  sendFilterAdded(attribute: string) {
+    this.sendDocumentInteraction(InteractionTypes.ADD_FILTER, {
+      attribute: attribute,
+      action: 'added'
+    });
+  }
+
+  sendFilterRemoved(attribute: string) {
+    this.sendDocumentInteraction(InteractionTypes.REMOVE_FILTER, {
+      attribute: attribute,
+      action: 'removed'
+    });
+  }
+
+  sendFilterChanged(attribute: string, filterValue: any, filterType: string) {
+    this.sendDocumentInteraction(InteractionTypes.CHANGE_FILTER, {
+      attribute: attribute,
+      value: filterValue,
+      filterType: filterType
+    });
+  }
+
+  sendAllFiltersRemoved() {
+    this.sendDocumentInteraction(InteractionTypes.REMOVE_ALL_FILTERS, {
+      action: 'removed_all'
+    });
+  }
+
+  // Encoding Interactions
+  sendAxisAttributeChanged(axis: string, attribute: string) {
+    this.sendDocumentInteraction(InteractionTypes.CHANGE_AXIS_ATTRIBUTE, {
+      axisChanged: axis,
+      attribute: attribute
+    });
+  }
+
+  sendAxesSwapped() {
+    this.sendDocumentInteraction(InteractionTypes.SWAP_AXES_ATTRIBUTES, {
+      action: 'swapped'
+    });
+  }
+
+  sendAggregationChanged(aggregationType: string) {
+    this.sendDocumentInteraction(InteractionTypes.CHANGE_AGGREGATION, {
+      aggregationType: aggregationType
+    });
+  }
+
+  sendChartTypeChanged(chartType: string) {
+    this.sendDocumentInteraction(InteractionTypes.CHANGE_CHART_TYPE, {
+      chartType: chartType
+    });
+  }
+
+  sendAllEncodingsRemoved() {
+    this.sendDocumentInteraction(InteractionTypes.REMOVE_ALL_ENCODINGS, {
+      action: 'removed_all'
+    });
+  }
+
+  // Color Mode Interactions
+  sendVisColorByModeChanged(mode: string) {
+    this.sendDocumentInteraction(InteractionTypes.CHANGE_VIS_COLOR_BY_MODE, {
+      mode: mode
+    });
+  }
+
+  sendAttributeColorByModeChanged(mode: string) {
+    this.sendDocumentInteraction(InteractionTypes.CHANGE_ATTRIBUTE_COLOR_BY_MODE, {
+      mode: mode
+    });
+  }
+
+  // Sort Interactions
+  sendAttributePanelSortChanged(sortType: string) {
+    this.sendDocumentInteraction(InteractionTypes.CHANGE_ATTRIBUTE_PANEL_SORT, {
+      sortType: sortType
+    });
+  }
+
+  sendDistributionPanelSortChanged(sortType: string) {
+    this.sendDocumentInteraction(InteractionTypes.CHANGE_DISTRIBUTION_PANEL_SORT, {
+      sortType: sortType
+    });
+  }
+
+  // Awareness Panel Interactions
+  sendAttributeAccordionToggled(attribute: string, action: string) {
+    this.sendDocumentInteraction(InteractionTypes.TOGGLE_ATTRIBUTE_ACCORDION_AWARENESS_PANEL, {
+      attribute: attribute,
+      action: action
+    });
+  }
+
+  sendAllAttributeAccordionToggled(action: string) {
+    this.sendDocumentInteraction(InteractionTypes.TOGGLE_ALL_ATTRIBUTE_ACCORDION_AWARENESS_PANEL, {
+      action: action
+    });
+  }
+
+  sendAttributeBookmarkToggled(attribute: string, action: string) {
+    this.sendDocumentInteraction(InteractionTypes.TOGGLE_ATTRIBUTE_BOOKMARK_AWARENESS_PANEL, {
+      attribute: attribute,
+      action: action
+    });
+  }
+
+  sendAllAttributeBookmarkToggled(action: string) {
+    this.sendDocumentInteraction(InteractionTypes.TOGGLE_ALL_ATTRIBUTE_BOOKMARK_AWARENESS_PANEL, {
+      action: action
+    });
+  }
+
   getDisconnectEventResponse() {
     return this.vizSocket.fromEvent("disconnect").pipe(map((obj) => obj));
   }
@@ -135,7 +267,7 @@ export class ChatService {
   }
 
   sendQuestionResponse(questionId: string, question: string, response: string) {
-    const userId = localStorage.getItem('userId');
+    const userId = localStorage.getItem('userId') || "anonymous";
     const payload = {
       question_id: questionId,
       response: response,

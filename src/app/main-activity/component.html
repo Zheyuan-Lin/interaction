@@ -1,7 +1,7 @@
 <!-- Top Navigation Bar -->
 <nav class="navbar navbar-light bg-light">
   <div class="navbar-collapse collapse show justify-content-between align-items-center w-100" id="collapsingNavbar2">
-    <div class="navbar-brand" style="color: #007bff; font-weight: bold;">Lumos</div>
+    <div class="navbar-brand" style=" font-weight: bold;">Lumos</div>
   </div>
 </nav>
 <!-- The Interface -->
@@ -27,131 +27,136 @@
                 </table>
               </header>
 
-
-              <!-- Content: Dataset Select -->
-              <div class="m-t-sm">
-                <div class="form-inline display-inline">
-                  <div class="form-group">
-                    <div class="input-group">
-                      <div class="input-group-prepend">
-                        <div class="input-group-text"><i class="fa fa-table"></i></div>
-                      </div>
-                      <div class="form-control" style="background-color: #f8f9fa;">
-                        movie
-                      </div>
-                    </div>
+           <!-- Content: Dataset Select -->
+           <div class="m-t-sm">
+            <div class="form-inline display-inline">
+              <div class="form-group">
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <div class="input-group-text"><i class="fa fa-table"></i></div>
                   </div>
-                </div>
-                
-                <!-- Data Preview Dropdown -->
-                <div class="mt-2">
-                  <button class="btn btn-outline-secondary btn-sm" 
-                          type="button" 
-                          (click)="toggleDataPreview()">
-                    <i class="fa fa-eye"></i> <span id="previewButtonText">Preview Data</span>
-                  </button>
-                </div>
-                
-                <!-- Collapsible Data Preview -->
-                <div class="collapse mt-2" id="dataPreview" [class.show]="isDataShown">
-                  <div class="card card-body" style="max-height: 300px; overflow-y: auto;">
-                    <h6 class="mb-2"><i class="fa fa-table"></i> Data Preview (First 5 rows)</h6>
-                    <div class="table-responsive">
-                      <table class="table table-sm table-striped">
-                        <thead class="thead-light">
-                          <tr>
-                            <th>ID</th>
-                            <th>Title</th>
-                            <th>Worldwide Gross</th>
-                            <th>Production Budget</th>
-                            <th>Release Year</th>
-                            <th>Content Rating</th>
-                            <th>Running Time</th>
-                            <th>Genre</th>
-                            <th>Creative Type</th>
-                            <th>Rotten Tomatoes Rating</th>
-                            <th>IMDB Rating</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td>p01</td>
-                            <td>From Dusk Till Dawn</td>
-                            <td>25,728,961</td>
-                            <td>20,000,000</td>
-                            <td>1996</td>
-                            <td>R</td>
-                            <td>107</td>
-                            <td>Horror</td>
-                            <td>Fantasy</td>
-                            <td>63</td>
-                            <td>7.1</td>
-                          </tr>
-                          <tr>
-                            <td>p02</td>
-                            <td>Broken Arrow</td>
-                            <td>148,345,997</td>
-                            <td>65,000,000</td>
-                            <td>1996</td>
-                            <td>R</td>
-                            <td>108</td>
-                            <td>Action</td>
-                            <td>Contemporary Fiction</td>
-                            <td>55</td>
-                            <td>5.8</td>
-                          </tr>
-                          <tr>
-                            <td>p03</td>
-                            <td>City Hall</td>
-                            <td>20,278,055</td>
-                            <td>40,000,000</td>
-                            <td>1996</td>
-                            <td>R</td>
-                            <td>111</td>
-                            <td>Drama</td>
-                            <td>Contemporary Fiction</td>
-                            <td>55</td>
-                            <td>6.1</td>
-                          </tr>
-                          <tr>
-                            <td>p04</td>
-                            <td>Happy Gilmore</td>
-                            <td>38,623,460</td>
-                            <td>10,000,000</td>
-                            <td>1996</td>
-                            <td>PG-13</td>
-                            <td>92</td>
-                            <td>Comedy</td>
-                            <td>Contemporary Fiction</td>
-                            <td>58</td>
-                            <td>6.9</td>
-                          </tr>
-                          <tr>
-                            <td>p05</td>
-                            <td>Fargo</td>
-                            <td>51,204,567</td>
-                            <td>7,000,000</td>
-                            <td>1996</td>
-                            <td>R</td>
-                            <td>87</td>
-                            <td>Thriller</td>
-                            <td>Contemporary Fiction</td>
-                            <td>94</td>
-                            <td>8.3</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    <small class="text-muted">
-                      <i class="fa fa-info-circle"></i> 
-                      Movie dataset with financial, rating, and metadata information
-                    </small>
+                  <div class="form-control" style="background-color: #f8f9fa;">
+                    voters
                   </div>
                 </div>
               </div>
-            </article>
+            </div>
+            
+            <!-- Data Preview Dropdown -->
+            <div class="mt-2">
+              <button class="btn btn-outline-secondary btn-sm" 
+                      type="button" 
+                      (click)="toggleDataPreview()">
+                <i class="fa fa-eye"></i> <span id="previewButtonText">Preview Data</span>
+              </button>
+            </div>
+            
+            <!-- Collapsible Data Preview -->
+            <div class="collapse mt-2" id="dataPreview" [class.show]="isDataShown">
+              <div class="card card-body" style="max-height: 300px; overflow-y: auto;">
+                <h6 class="mb-2"><i class="fa fa-table"></i> Data Preview (First 5 rows)</h6>
+                <div class="table-responsive">
+                  <table class="table table-sm table-striped">
+                    <thead class="thead-light">
+                      <tr>
+                        <th>Voter ID</th>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Race</th>
+                        <th>Income</th>
+                        <th>Location</th>
+                        <th>Party</th>
+                        <th>Abortion View</th>
+                        <th>Gun Control View</th>
+                        <th>Immigration View</th>
+                        <th>Voted Last Election</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>84891255</td>
+                        <td>Darnell Johnson</td>
+                        <td>43</td>
+                        <td>Male</td>
+                        <td>Black</td>
+                        <td>High</td>
+                        <td>Urban</td>
+                        <td>Democrat</td>
+                        <td>1.6</td>
+                        <td>2.3</td>
+                        <td>1.6</td>
+                        <td>False</td>
+                      </tr>
+                      <tr>
+                        <td>76236989</td>
+                        <td>Elizabeth Johnson</td>
+                        <td>62</td>
+                        <td>Female</td>
+                        <td>White</td>
+                        <td>High</td>
+                        <td>Suburban</td>
+                        <td>Democrat</td>
+                        <td>2.2</td>
+                        <td>1.4</td>
+                        <td>0.9</td>
+                        <td>True</td>
+                      </tr>
+                      <tr>
+                        <td>58261217</td>
+                        <td>Woo Jung</td>
+                        <td>86</td>
+                        <td>Male</td>
+                        <td>Asian</td>
+                        <td>Low</td>
+                        <td>Suburban</td>
+                        <td>Democrat</td>
+                        <td>2.2</td>
+                        <td>1.4</td>
+                        <td>1.5</td>
+                        <td>False</td>
+                      </tr>
+                      <tr>
+                        <td>39895612</td>
+                        <td>Malik Anderson</td>
+                        <td>28</td>
+                        <td>Male</td>
+                        <td>Black</td>
+                        <td>Low</td>
+                        <td>Urban</td>
+                        <td>Democrat</td>
+                        <td>0.8</td>
+                        <td>1.1</td>
+                        <td>2.1</td>
+                        <td>True</td>
+                      </tr>
+                      <tr>
+                        <td>94821339</td>
+                        <td>Darius Moore</td>
+                        <td>38</td>
+                        <td>Male</td>
+                        <td>Black</td>
+                        <td>Middle</td>
+                        <td>Suburban</td>
+                        <td>Democrat</td>
+                        <td>1.2</td>
+                        <td>2.1</td>
+                        <td>1.2</td>
+                        <td>True</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <small class="text-muted">
+                  <i class="fa fa-info-circle"></i> 
+                  Movie dataset with financial, rating, and metadata information
+                </small>
+              </div>
+            </div>
           </div>
-        </as-split-area>
+        </article>
+      </div>
+    </as-split-area>
 
         <!-- ROW: Attribute Panel -->
         <as-split-area [size]="75">

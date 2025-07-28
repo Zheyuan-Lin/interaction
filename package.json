@@ -5,15 +5,18 @@
     "node": "18.x",
     "npm": "9.x"
   },
-"scripts": {
-  "ng": "ng",
-  "start": "node server.js",
-  "heroku-start": "node server.js",
-  "dev": "NODE_OPTIONS='--openssl-legacy-provider --no-deprecation' ng serve",
-  "build": "NODE_OPTIONS='--openssl-legacy-provider --no-deprecation' ng build",
-  "heroku-postbuild": "npm run build",
-  "test": "ng test"
-},
+  "scripts": {
+    "ng": "ng",
+    "start": "NODE_OPTIONS='--openssl-legacy-provider --no-deprecation' ng serve",
+    "build": "NODE_OPTIONS='--openssl-legacy-provider --no-deprecation' ng build --prod",
+    "vercel-build": "ng build --configuration production",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "lint": "ng lint",
+    "e2e": "ng e2e",
+    "heroku-postbuild": "npm run build",
+    "heroku-start": "node server.js"
+  },
 "dependencies": {
   "@angular/animations": "~7.2.0",
   "@angular/cli": "^7.3.9",
