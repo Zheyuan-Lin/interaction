@@ -1059,7 +1059,12 @@ export const AppConfig = {
       "abortion_view",
       "gun_control_view",
       "immigration_view",
-      "voted_last_election"
+      "voted_2016",
+      "voted_2018", 
+      "voted_2020",
+      "voted_2022",
+      "voted_2024",
+      "last_vote"
   ],
   attributes: {
       "voter_id": {
@@ -1077,26 +1082,26 @@ export const AppConfig = {
       "age": {
           name: "Age",
           datatype: "Q",
-          max: 100,  // Set realistic max
+          max: 100,
           step: 1,
-          min: 18,   // Set realistic min
+          min: 18,
           filterModel: [18, 100]
       },
       "gender": {
           name: "Gender",
           datatype: "N",
-          types: ["Male", "Female"],  // Add known values
+          types: ["Male", "Female"],
           filterModel: ["Male", "Female"]
       },
       "race": {
           name: "Race",
           datatype: "N",
-          types: ["White", "Black", "Asian"],  // Add known values
-          filterModel: ["White", "Black", "Asian"]
+          types: ["White", "Black", "Asian", "Hispanic"],
+          filterModel: ["White", "Black", "Asian", "Hispanic"]
       },
       "income": {
           name: "Income",
-          datatype: "O",  // Change to Ordinal since it's "Low", "Middle", "High"
+          datatype: "N",
           types: ["Low", "Middle", "High"],
           filterModel: ["Low", "Middle", "High"]
       },
@@ -1114,7 +1119,7 @@ export const AppConfig = {
       },
       "abortion_view": {
           name: "Abortion View",
-          datatype: "Q",  // Change to Quantitative since it's numeric values
+          datatype: "Q",
           max: 3.0,
           step: 0.1,
           min: -3.0,
@@ -1122,7 +1127,7 @@ export const AppConfig = {
       },
       "gun_control_view": {
           name: "Gun Control View",
-          datatype: "Q",  // Change to Quantitative
+          datatype: "Q",
           max: 3.0,
           step: 0.1,
           min: -3.0,
@@ -1130,17 +1135,49 @@ export const AppConfig = {
       },
       "immigration_view": {
           name: "Immigration View",
-          datatype: "Q",  // Change to Quantitative
+          datatype: "Q",
           max: 3.0,
           step: 0.1,
           min: -3.0,
           filterModel: [-3.0, 3.0]
       },
-      "voted_last_election": {
-          name: "Voted in Last Election",
+      "voted_2016": {
+          name: "Voted in 2016",
           datatype: "N",
-          types: ["True", "False"],  // Add boolean values as strings
-          filterModel: ["True", "False"]
+          types: ["Yes", "No", "NA"],
+          filterModel: ["Yes", "No", "NA"]
+      },
+      "voted_2018": {
+          name: "Voted in 2018", 
+          datatype: "N",
+          types: ["Yes", "No", "NA"],
+          filterModel: ["Yes", "No", "NA"]
+      },
+      "voted_2020": {
+          name: "Voted in 2020",
+          datatype: "N",
+          types: ["Yes", "No", "NA"],
+          filterModel: ["Yes", "No", "NA"]
+      },
+      "voted_2022": {
+          name: "Voted in 2022",
+          datatype: "N",
+          types: ["Yes", "No", "NA"],
+          filterModel: ["Yes", "No", "NA"]
+      },
+      "voted_2024": {
+          name: "Voted in 2024",
+          datatype: "N",
+          types: ["Yes", "No", "NA"],
+          filterModel: ["Yes", "No", "NA"]
+      },
+      "last_vote": {
+          name: "Last Vote",
+          datatype: "T",
+          max: 2024,
+          step: 2,
+          min: 2014,
+          filterModel: [2014, 2024]
       }
   }
 },

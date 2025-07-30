@@ -42,17 +42,14 @@ export class ChatService {
     });
 
     this.vizSocket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
       // Attempt to reconnect after a delay
       setTimeout(() => {
-        console.log('Attempting to reconnect...');
         this.vizSocket.connect();
       }, 5000);
     });
 
     this.vizSocket.on('disconnect', (reason) => {
       const socketId = this.vizSocket.ioSocket.id;
-      console.log('Socket disconnected:', reason, 'Socket ID:', socketId);
       if (reason === 'io server disconnect') {
         // Server initiated disconnect, try to reconnect
         this.vizSocket.connect();
@@ -60,24 +57,23 @@ export class ChatService {
     });
 
     this.vizSocket.on('error', (error) => {
-      console.error('Socket error:', error);
+      // Socket error handling
     });
 
     // Listen for attribute distribution updates
     this.vizSocket.on('attribute_distribution', (data) => {
       const socketId = this.vizSocket.ioSocket.id;
-      console.log('Received attribute distribution for socket ID:', socketId, 'Data:', data);
       // Emit the data through the observable
       this.attributeDistributionSubject.next(data);
     });
 
     // Add ping/pong monitoring
     this.vizSocket.ioSocket.io.on('ping', () => {
-      console.log('Ping sent');
+      // Ping monitoring
     });
 
     this.vizSocket.ioSocket.io.on('pong', (latency) => {
-      console.log('Pong received, latency:', latency, 'ms');
+      // Pong monitoring
     });
 
     // Now connect after setting up all event handlers
@@ -126,7 +122,6 @@ export class ChatService {
       appLevel: this.global.appLevel,
       group: "control"  // Add the group field that server expects
     };
-    console.log('Sending document interaction:', payload);
     this.vizSocket.emit("recieve_interaction", payload);
   }
 

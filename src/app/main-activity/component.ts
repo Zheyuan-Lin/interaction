@@ -732,7 +732,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
         $("#plot_container").empty(); // clear existing plot
         break;
       default:
-        console.log(`Invalid plot type '${this.currentPlotType}'`);
         break;
     }
   }
@@ -957,7 +956,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
    * Event Listener when SORT order in the Distribution Panel is changed.
    */
   onChangeDistributionPanelSort(model) {
-    console.log(model);
     /* Prepare and Send New Message - Start */
     let message = this.utilsService.initializeNewMessage(InteractionTypes.CHANGE_DISTRIBUTION_PANEL_SORT);
     message.data = {
@@ -1439,7 +1437,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
         });
         break;
       default:
-        console.log(`Invalid attribute panel Sort By option; Do nothing.`);
         break;
     }
     // remove primary Key and label Key from awareness panel
@@ -1491,7 +1488,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
         });
         break;
       default:
-        console.log(`Invalid awareness Panel Sort By option; Do nothing.`);
         break;
     }
     return arrayCopy;
@@ -1555,8 +1551,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
    * Handle an incoming question by displaying popup and logging
    */
   private handleIncomingQuestion(questionData: Question): void {
-    console.log("Processing incoming question:", questionData);
-    
     // Update the current question
     this.currentQuestion = questionData;
     
@@ -1850,7 +1844,6 @@ function initializePlotInstance(context, chartType) {
       context.currentPlotInstance = null;
       break;
     default:
-      console.log(`Invalid plot type '${chartType}'`);
       break;
   }
 }

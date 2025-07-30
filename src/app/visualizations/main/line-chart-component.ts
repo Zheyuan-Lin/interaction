@@ -216,11 +216,22 @@ export class LineChart {
     context.lineChartConfig.xAxis = d3.axisBottom(context.lineChartConfig.xScale);
 
     // Set y scale and axis
+    let minVal = d3.min(buckets, (d) => d[1]) || 0;
+    let maxVal = d3.max(buckets, (d) => d[1]) || 0;
+    
     context.lineChartConfig.yScale = d3
       .scaleLinear()
-      .domain([0, d3.max(buckets, (d) => d[1])])
-      .range([context.plotHeight, 0])
-      .nice();
+      .range([context.plotHeight, 0]);
+    
+    // Handle Y-axis range properly based on value distribution
+    if (minVal >= 0) {
+      context.lineChartConfig.yScale.domain([0, maxVal]).nice();
+    } else if (maxVal <= 0) {
+      context.lineChartConfig.yScale.domain([minVal, 0]).nice();
+    } else {
+      context.lineChartConfig.yScale.domain([minVal, maxVal]).nice();
+    }
+    
     context.lineChartConfig.yAxis = d3
       .axisLeft(context.lineChartConfig.yScale)
       .tickFormat((d) => context.utilsService.formatLargeNum(+d));

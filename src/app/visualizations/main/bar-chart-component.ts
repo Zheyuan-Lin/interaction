@@ -171,13 +171,14 @@ export class BarChart {
     // Check if we should create a grouped bar chart (both variables are categorical)
     let shouldCreateGroupedBar = dataset["xVar"] && dataset["yVar"] && !xIsQ && !yIsQ;
 
-    console.log("Bar chart debugging:", {
-      xVar: dataset["xVar"],
-      yVar: dataset["yVar"],
-      xIsQ: xIsQ,
-      yIsQ: yIsQ,
-      shouldCreateGroupedBar: shouldCreateGroupedBar
-    });
+    // Remove debugging console.log
+    // console.log("Bar chart debugging:", {
+    //   xVar: dataset["xVar"],
+    //   yVar: dataset["yVar"],
+    //   xIsQ: xIsQ,
+    //   yIsQ: yIsQ,
+    //   shouldCreateGroupedBar: shouldCreateGroupedBar
+    // });
 
     if (shouldCreateGroupedBar) {
       // Create grouped bar chart
@@ -325,7 +326,6 @@ export class BarChart {
             const lb = utils.formatLargeNum(+bin.x0); // lowerbound
             const ub = utils.formatLargeNum(+bin.x1); // upperbound
             const val = utils.aggregate(bin, aggType, "yVar");
-            console.log('🔢 [Q x Q] aggregation:', { bin: `${lb}-${ub}`, aggType, val });
             return [`[${lb}, ${ub})`, val, bin];
           });
           xAxis.tickFormat((_, i) => buckets[i] ? buckets[i][0] : "");
@@ -337,7 +337,6 @@ export class BarChart {
               prepared,
               (v) => {
                 const val = utils.aggregate(v, aggType, "yVar");
-                console.log('🔢 [N/O/T x Q] aggregation:', { group: v[0]?.xVar, aggType, val, count: v.length });
                 return val;
               },
               (d) => d["xVar"]
@@ -377,7 +376,6 @@ export class BarChart {
               prepared,
               (v) => {
                 const val = utils.aggregate(v, aggType, "xVar");
-                console.log('🔢 [Q x N/O/T] aggregation:', { group: v[0]?.yVar, aggType, val, count: v.length });
                 return val;
               },
               (d) => d["yVar"]
@@ -649,8 +647,6 @@ export class BarChart {
     hasQuantVar = false;
     quantVar = null;
     aggType = "count";
-
-    console.log("Grouped bar chart - aggType:", aggType, "quantVar:", quantVar, "hasQuantVar:", hasQuantVar);
 
     // Get unique groups and subgroups, filtering out null/undefined values
     let groups = Array.from(new Set(prepared.map((d) => d.xVar).filter(d => d != null && d !== undefined))) as string[];
