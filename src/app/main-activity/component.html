@@ -2,6 +2,9 @@
 <nav class="navbar navbar-light bg-light">
   <div class="navbar-collapse collapse show justify-content-between align-items-center w-100" id="collapsingNavbar2">
     <div class="navbar-brand" style=" font-weight: bold;">Lumos</div>
+    <div class="navbar-text" style="font-size: 0.9em; color: #6c757d;">
+      Your task is to examine a dataset of 1,000 simulated U.S. voters using the Lumos tool. Record your findings and insights as you analyze the data.
+    </div>
   </div>
 </nav>
 <!-- The Interface -->
@@ -40,6 +43,15 @@
                   </div>
                 </div>
               </div>
+            </div>
+            
+            <!-- Political View Scale Info -->
+            <div class="mt-2 mb-2">
+              <small class="text-muted d-block">
+                <i class="fa fa-info-circle mr-1"></i>
+                <strong>Scale of political views:</strong><br>
+                <span class="ml-3"><strong>-3</strong> "strongly oppose" | <strong>+3</strong> "strongly support"</span>
+              </small>
             </div>
             
             <!-- Data Preview Dropdown -->
@@ -516,6 +528,29 @@
                       </div>
                     </ng-container>
                   </div>
+
+                  <!-- OPTION: Ordinal Attributes -->
+                  <div class="form-group"
+                    *ngFor="let attribute of appConfig[global.appMode].attributeDatatypeList['O'];">
+                    <ng-container *ngIf="appConfig[global.appMode]['attributes'][attribute]['filter']">
+                      <span>
+                        <label class="form-label" for="{{'select_' + attribute}}">{{attribute}}</label>
+                        <button class="btn btn-light btn-sm float-right" (click)="removeFilter(attribute)">
+                          <i class="fa fa-times"></i>
+                        </button>
+                      </span>
+                      <ng-multiselect-dropdown name="{{'select_' + attribute}}" [placeholder]="' '" appendTo="body"
+                        [data]="appConfig[global.appMode]['attributes'][attribute]['types']"
+                        [(ngModel)]="appConfig[global.appMode]['attributes'][attribute]['filterModel']"
+                        [settings]="userConfig['filterMultiselectDropdownSettings']"
+                        (onSelect)="onChangeFilter(attribute, 'select')"
+                        (onSelectAll)="onChangeFilter(attribute, 'selectAll')"
+                        (onDeSelect)="onChangeFilter(attribute, 'deselect')"
+                        (onDeSelectAll)="onChangeFilter(attribute, 'deselectAll')">
+                      </ng-multiselect-dropdown>
+                      <hr class="separator" />
+                    </ng-container>
+                  </div>
                 </form>
               </div>
             </article>
@@ -539,8 +574,12 @@
                 </table>
               </header>
               
-
-              
+              <!-- Requirement Text -->
+              <div class="mb-2">
+                <small class="text-muted">
+                  <i class="fa fa-info-circle"></i> At least five insights are required
+                </small>
+              </div>
 
               <!-- Content -->
               <div class="insights-content">

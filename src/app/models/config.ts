@@ -1059,12 +1059,7 @@ export const AppConfig = {
       "abortion_view",
       "gun_control_view",
       "immigration_view",
-      "voted_2016",
-      "voted_2018", 
-      "voted_2020",
-      "voted_2022",
-      "voted_2024",
-      "last_vote"
+      "last_year_voted"
   ],
   attributes: {
       "voter_id": {
@@ -1141,43 +1136,13 @@ export const AppConfig = {
           min: -3.0,
           filterModel: [-3.0, 3.0]
       },
-      "voted_2016": {
-          name: "Voted in 2016",
-          datatype: "N",
-          types: ["Yes", "No", "NA"],
-          filterModel: ["Yes", "No", "NA"]
-      },
-      "voted_2018": {
-          name: "Voted in 2018", 
-          datatype: "N",
-          types: ["Yes", "No", "NA"],
-          filterModel: ["Yes", "No", "NA"]
-      },
-      "voted_2020": {
-          name: "Voted in 2020",
-          datatype: "N",
-          types: ["Yes", "No", "NA"],
-          filterModel: ["Yes", "No", "NA"]
-      },
-      "voted_2022": {
-          name: "Voted in 2022",
-          datatype: "N",
-          types: ["Yes", "No", "NA"],
-          filterModel: ["Yes", "No", "NA"]
-      },
-      "voted_2024": {
-          name: "Voted in 2024",
-          datatype: "N",
-          types: ["Yes", "No", "NA"],
-          filterModel: ["Yes", "No", "NA"]
-      },
-      "last_vote": {
-          name: "Last Vote",
+      "last_year_voted": {
+          name: "Last Year Voted",
           datatype: "T",
           max: 2024,
           step: 2,
-          min: 2014,
-          filterModel: [2014, 2024]
+          min: 2016,
+          filterModel: [2016, 2024]
       }
   }
 },
