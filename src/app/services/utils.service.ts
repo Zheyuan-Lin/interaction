@@ -90,7 +90,9 @@ export class UtilsService {
    * Return bool if attribute is measurement type "N", "O", "T", or "Q".
    */
   isMeasure(dataset, attr, measureScale) {
-    return attr ? dataset.attributeDatatypeList[measureScale].indexOf(attr) !== -1 : false;
+    return attr && dataset && dataset.attributeDatatypeList && dataset.attributeDatatypeList[measureScale] 
+      ? dataset.attributeDatatypeList[measureScale].indexOf(attr) !== -1 
+      : false;
   }
 
   /**

@@ -72,7 +72,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
   canContinue: boolean = false; // Flag to track if user can continue (5+ insights)
   showCopied: boolean = false;
   //timeRemaining: number = 20 * 60; // 20 minutes in seconds
-  timeRemaining: number = 10; // 10 seconds
+  timeRemaining: number = 5 * 60; // 10 seconds
   timerInterval: any;
   canContinueTime: boolean = false;
   editingInsightIndex: number = -1; // Track which insight is being edited
@@ -1221,11 +1221,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     if (reset) dataset["chartType"] = null;
     this.currentPlotType = dataset["chartType"];
     
-    // Clear Y-axis when switching to bar chart since bar charts don't use Y-axis
-    if (dataset["chartType"] === "barchart" && dataset["yVar"]) {
-      dataset["yVar"] = null;
-    }
-    
     if (updateVis) {
       initializePlotInstance(this, this.currentPlotType);
       this.updateVis();
@@ -1279,6 +1274,13 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
    */
   shouldShowAggregationDropdown() {
     let dataset = this.appConfig[this.global.appMode];
+    
+    // Check if dataset is properly initialized
+    if (!dataset || !dataset.attributeDatatypeList) {
+      console.log('shouldShowAggregationDropdown: Dataset not initialized yet');
+      return false;
+    }
+    
     let hasBothVars = dataset["xVar"] && dataset["yVar"];
     let isBarOrLine = ['barchart', 'linechart'].indexOf(dataset["chartType"]) !== -1;
     
@@ -1286,6 +1288,8 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     let xIsQ = this.utilsService.isMeasure(dataset, dataset["xVar"], "Q");
     let yIsQ = this.utilsService.isMeasure(dataset, dataset["yVar"], "Q");
     let hasQuantitativeVar = xIsQ || yIsQ;
+    
+
     
     // Only show aggregation if we have both variables, it's a bar/line chart, and at least one variable is quantitative
     return hasBothVars && isBarOrLine && hasQuantitativeVar;

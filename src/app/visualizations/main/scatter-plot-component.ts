@@ -25,6 +25,23 @@ export class ScatterPlot {
   }
 
   /**
+   * Helper function to sort income values in the correct order
+   */
+  sortIncomeValues(a: any, b: any): number {
+    const incomeOrder = { "Low": 1, "Middle": 2, "High": 3 };
+    const aOrder = incomeOrder[a] || 999;
+    const bOrder = incomeOrder[b] || 999;
+    return aOrder - bOrder;
+  }
+
+  /**
+   * Helper function to check if a variable is income
+   */
+  isIncomeVariable(varName: string): boolean {
+    return varName === "income";
+  }
+
+  /**
    * Create variables needed to draw and update plot.
    */
   initialize() {
@@ -164,6 +181,10 @@ export class ScatterPlot {
                 return d["xVar"];
               })
               .sort(function (x, y) {
+                // Special sorting for income variable
+                if (context.isIncomeVariable(dataset["xVar"])) {
+                  return context.sortIncomeValues(x, y);
+                }
                 return d3.ascending(x, y); // sort domain
               })
           )
@@ -187,6 +208,10 @@ export class ScatterPlot {
                 return d["yVar"];
               })
               .sort(function (x, y) {
+                // Special sorting for income variable
+                if (context.isIncomeVariable(dataset["yVar"])) {
+                  return context.sortIncomeValues(x, y);
+                }
                 return d3.ascending(x, y); // sort domain
               })
           )

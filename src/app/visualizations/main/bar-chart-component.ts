@@ -24,6 +24,23 @@ export class BarChart {
   }
 
   /**
+   * Helper function to sort income values in the correct order
+   */
+  sortIncomeValues(a: any, b: any): number {
+    const incomeOrder = { "Low": 1, "Middle": 2, "High": 3 };
+    const aOrder = incomeOrder[a[0]] || 999;
+    const bOrder = incomeOrder[b[0]] || 999;
+    return aOrder - bOrder;
+  }
+
+  /**
+   * Helper function to check if a variable is income
+   */
+  isIncomeVariable(varName: string): boolean {
+    return varName === "income";
+  }
+
+  /**
    * Create variables needed to draw and update plot.
    */
   initialize() {
@@ -213,6 +230,10 @@ export class BarChart {
             (d) => d["xVar"]
           )
           .sort(function (x, y) {
+            // Special sorting for income variable
+            if (context.isIncomeVariable(dataset["xVar"])) {
+              return context.sortIncomeValues(x, y);
+            }
             return d3.ascending(x[0], y[0]); // sort buckets
           });
         buckets.forEach((d) => d.push(prepared.filter((obj) => obj["xVar"] == d[0])));
@@ -276,6 +297,10 @@ export class BarChart {
             (d) => d["yVar"]
           )
           .sort(function (x, y) {
+            // Special sorting for income variable
+            if (context.isIncomeVariable(dataset["yVar"])) {
+              return context.sortIncomeValues(x, y);
+            }
             return d3.ascending(y[0], x[0]); // sort buckets reverse vertically
           });
         buckets.forEach((d) => d.push(prepared.filter((obj) => obj["yVar"] == d[0])));
@@ -342,6 +367,10 @@ export class BarChart {
               (d) => d["xVar"]
             )
             .sort(function (x, y) {
+              // Special sorting for income variable
+              if (context.isIncomeVariable(dataset["xVar"])) {
+                return context.sortIncomeValues(x, y);
+              }
               return d3.ascending(x[0], y[0]); // sort buckets
             });
           buckets.forEach((d) => d.push(prepared.filter((obj) => obj["xVar"] == d[0])));
@@ -381,6 +410,10 @@ export class BarChart {
               (d) => d["yVar"]
             )
             .sort(function (x, y) {
+              // Special sorting for income variable
+              if (context.isIncomeVariable(dataset["yVar"])) {
+                return context.sortIncomeValues(x, y);
+              }
               return d3.ascending(y[0], x[0]); // sort buckets reverse vertically
             });
           buckets.forEach((d) => d.push(prepared.filter((obj) => obj["yVar"] == d[0])));
@@ -664,8 +697,24 @@ export class BarChart {
     }
 
     // Sort groups and subgroups for consistent ordering
-    groups.sort();
-    subgroups.sort();
+    // Special sorting for income variable
+    if (context.isIncomeVariable(dataset["xVar"])) {
+      groups.sort((a, b) => {
+        const incomeOrder = { "Low": 1, "Middle": 2, "High": 3 };
+        return (incomeOrder[a] || 999) - (incomeOrder[b] || 999);
+      });
+    } else {
+      groups.sort();
+    }
+    
+    if (context.isIncomeVariable(dataset["yVar"])) {
+      subgroups.sort((a, b) => {
+        const incomeOrder = { "Low": 1, "Middle": 2, "High": 3 };
+        return (incomeOrder[a] || 999) - (incomeOrder[b] || 999);
+      });
+    } else {
+      subgroups.sort();
+    }
 
     // Aggregate data for each (group, subgroup) combination
     let data = [];

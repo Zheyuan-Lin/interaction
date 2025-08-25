@@ -24,9 +24,6 @@
     "@angular/platform-browser": "~7.2.0",
     "@angular/platform-browser-dynamic": "~7.2.0",
     "@angular/router": "~7.2.0",
-    "@angular-devkit/build-angular": "~0.13.0",
-    "@angular/compiler-cli": "~7.2.0",
-    "@angular/language-service": "~7.2.0",
     "@fortawesome/fontawesome-free-webfonts": "^1.0.9",
     "@ng-select/ng-select": "^2.1.0",
     "@popperjs/core": "^2.6.0",
@@ -55,10 +52,12 @@
     "rxjs": "~6.3.3",
     "seedrandom": "^3.0.1",
     "tslib": "^2.0.0",
-    "typescript": "3.9",
     "zone.js": "~0.8.26"
   },
   "devDependencies": {
+    "@angular-devkit/build-angular": "~0.13.0",
+    "@angular/compiler-cli": "~7.2.0",
+    "@angular/language-service": "~7.2.0",
     "@types/bootstrap": "^4.5.1",
     "@types/jasmine": "~2.8.8",
     "@types/jasminewd2": "~2.0.3",
@@ -74,7 +73,8 @@
     "protractor": "~5.4.0",
     "sass": "^1.77.8",
     "ts-node": "~7.0.0",
-    "tslint": "~5.11.0"
+    "tslint": "~5.11.0",
+    "typescript": "3.9"
   },
   "resolutions": {
     "@types/d3-scale": "1.0.14",
