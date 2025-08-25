@@ -212,7 +212,7 @@ voter_id,name,age,gender,race,income,location,party,abortion_view,gun_control_vi
 39965758,Richard Garcia,74,Male,White,Low,Urban,Independent,2.3,-2.6,-1.0,2024
 14315692,Juana Ramirez,38,Female,Hispanic,High,Urban,Democrat,2.8,1.7,2.3,2024
 98269220,Charles Jones,29,Male,White,Low,Urban,Democrat,2.4,2.8,0.2,2022
-2674609,William Garcia,71,Male,White,Low,Urban,Independent,-2.7,0.7,0.2,2024
+2674609,William Garcia,71,Male,Black,Low,Urban,Independent,-2.7,0.7,0.2,2024
 9494268,Eun Choi,28,Female,Asian,Low,Rural,Democrat,1.6,2.2,1.2,2022
 9014476,Shreya Patel,67,Female,Asian,Middle,Suburban,Democrat,3.0,2.2,1.8,2024
 80185618,John Johnson,62,Male,White,High,Suburban,Republican,-1.8,-3.0,-2.3,2024
@@ -687,7 +687,7 @@ voter_id,name,age,gender,race,income,location,party,abortion_view,gun_control_vi
 46483468,David Smith,72,Male,White,High,Urban,Republican,-2.5,-1.8,-2.0,2018
 34692017,Richard Rodriguez,78,Male,White,Middle,Urban,Republican,-2.8,-2.1,-2.2,2024
 39427964,Elena Gonzalez,63,Female,Hispanic,Low,Rural,Democrat,1.9,2.5,1.7,2020
-10449887,Jessica Johnson,50,Female,White,Middle,Urban,Independent,0.2,0.2,1.1,2024
+10449887,Jessica Johnson,50,Female,Black,Middle,Urban,Independent,0.2,0.2,1.1,2024
 69346645,Nancy Smith,61,Female,White,Low,Urban,Democrat,2.7,1.0,2.0,2024
 53538323,James Miller,52,Male,White,High,Rural,Republican,-2.5,-2.8,-1.6,2024
 6931351,Jesus Gonzalez,39,Male,Hispanic,Middle,Suburban,Republican,-2.7,-1.0,-1.7,2022
@@ -923,7 +923,7 @@ voter_id,name,age,gender,race,income,location,party,abortion_view,gun_control_vi
 77214905,David Brown,36,Male,White,Low,Rural,Republican,-2.0,-2.2,-2.1,2024
 24108754,Jose Garcia,87,Male,Hispanic,High,Urban,Republican,-2.3,-3.0,-2.1,2024
 96233295,Robert Smith,36,Male,White,Middle,Rural,Democrat,1.9,3.0,1.9,2024
-13269505,Elizabeth Smith,76,Female,White,Middle,Rural,Independent,-1.0,-1.5,0.5,2024
+13269505,Elizabeth Smith,76,Female,Black,Middle,Rural,Independent,-1.0,-1.5,0.5,2024
 4576999,David Williams,51,Male,White,Low,Urban,Democrat,2.4,2.9,1.9,2024
 85603351,Carmen Gonzalez,34,Female,Hispanic,Middle,Urban,Democrat,1.0,2.2,1.4,2024
 46803096,Susan Jones,19,Female,White,High,Urban,Republican,-1.5,-1.5,-2.0,2024
