@@ -183,7 +183,18 @@ export class PostPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-
+    // Get userId from URL parameters first, then fallback to localStorage
+    this.route.queryParams.subscribe(params => {
+      const urlUserId = params['userId'];
+      if (urlUserId) {
+        this.userId = urlUserId;
+        localStorage.setItem('userId', urlUserId);
+        console.log('UserId scraped from URL:', urlUserId);
+      } else {
+        this.userId = localStorage.getItem('userId');
+        console.log('UserId loaded from localStorage:', this.userId);
+      }
+    });
     
     // Ensure socket connection is established
     this.chatService.connectToSocket();
