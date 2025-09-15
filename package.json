@@ -54,6 +54,7 @@
     "rxjs": "~6.3.3",
     "seedrandom": "^3.0.1",
     "tslib": "^2.0.0",
+    "typescript": "3.9",
     "zone.js": "~0.8.26"
   },
   "devDependencies": {
@@ -73,8 +74,7 @@
     "protractor": "~5.4.0",
     "sass": "^1.77.8",
     "ts-node": "~7.0.0",
-    "tslint": "~5.11.0",
-    "typescript": "3.9"
+    "tslint": "~5.11.0"
   },
   "resolutions": {
     "@types/d3-scale": "1.0.14",
