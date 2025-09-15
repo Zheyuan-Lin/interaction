@@ -69,10 +69,24 @@ export const enum InteractionTypes {
   
   // User Insights
   SAVE_USER_INSIGHT = "save_user_insight",
-  CONTINUE_AFTER_INSIGHTS = "continue_after_insights",
+  EDIT_USER_INSIGHT = "edit_user_insight",
+  DELETE_USER_INSIGHT = "delete_user_insight",
   
-  // Question Responses
-  QUESTION_RESPONSE = "question_response"
+  // Question Response
+  QUESTION_RESPONSE = "question_response",
+  
+  // Session Management
+  SESSION_START = "session_start",
+  SESSION_END = "session_end",
+  SAVE_LOGS = "save_logs",
+  RESTART_BIAS_COMPUTATION = "restart_bias_computation",
+  
+  // Data Preview
+  TOGGLE_DATA_PREVIEW = "toggle_data_preview",
+  
+  // Popup Management
+  TOGGLE_POPUP_MINIMIZE = "toggle_popup_minimize",
+  POPUP_RESPONSE_SENT = "popup_response_sent"
 }
 
 /**

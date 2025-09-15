@@ -7,16 +7,11 @@ import { Message } from "../models/message";
 
 @Injectable()
 export class UtilsService {
-  appMode: string;
-  appType: string;
-  appLevel: string;
-
-  constructor() {
-    this.appMode = "synthetic_voters_v14.csv";
-    this.appType = "AWARENESS";
-    this.appLevel = "live";
-  }
-
+  appMode: string = "synthetic_voters_v14.csv";
+  appType: string = "AWARENESS";
+  appLevel: string = "live";
+  sumTimesVisited: number = 0;
+  maxTimesVisited: number = 0;
   /**
    * Generates a random alphanumeric string of `length` characters.
    */
@@ -72,27 +67,37 @@ export class UtilsService {
     return acc > cur ? acc : cur;
   }
 
-  /**
-   * Reducer for calculating total times visited.
-   */
-  sumTimesVisited(acc: number, cur: number) {
-    return acc + cur["timesVisited"];
-  }
-
-  /**
-   * Reducer for calculating max times visited.
-   */
-  maxTimesVisited(acc: number, cur: number) {
-    return acc > cur["timesVisited"] ? acc : cur["timesVisited"];
-  }
 
   /**
    * Return bool if attribute is measurement type "N", "O", "T", or "Q".
    */
   isMeasure(dataset, attr, measureScale) {
-    return attr && dataset && dataset.attributeDatatypeList && dataset.attributeDatatypeList[measureScale] 
-      ? dataset.attributeDatatypeList[measureScale].indexOf(attr) !== -1 
-      : false;
+    return attr ? dataset.attributeDatatypeList[measureScale].indexOf(attr) !== -1 : false;
+  }
+
+  /**
+   * Sort function that handles income ordering specifically.
+   * If the attribute is "income", it orders as "Low", "Middle", "High".
+   * Otherwise, it uses alphabetical ordering.
+   */
+  sortWithIncomeOrder(x: any, y: any, attributeName: string) {
+    // Check if this is the income attribute
+    if (attributeName === "income") {
+      const incomeOrder = ["Low", "Middle", "High"];
+      const xIndex = incomeOrder.indexOf(x);
+      const yIndex = incomeOrder.indexOf(y);
+      
+      // If both values are in the income order, sort by that order
+      if (xIndex !== -1 && yIndex !== -1) {
+        return xIndex - yIndex;
+      }
+      // If only one is in the order, prioritize the ordered one
+      if (xIndex !== -1) return -1;
+      if (yIndex !== -1) return 1;
+    }
+    
+    // Default to alphabetical ordering
+    return d3.ascending(x, y);
   }
 
   /**
@@ -100,25 +105,17 @@ export class UtilsService {
    */
   aggregate(values, aggType, xyVar) {
     if (values.length) {
-      // Filter out null/undefined values for all aggregations except count
-      let validValues = values.filter(d => d[xyVar] != null && d[xyVar] !== undefined);
-      
       switch (aggType) {
         case "count":
-          // Count all values, including null/undefined
-          return values.length;
+          return d3.count(values, (d) => d[xyVar]);
         case "min":
-          if (validValues.length === 0) return 0;
-          return d3.min(validValues, (d) => +d[xyVar]);
+          return d3.min(values, (d) => d[xyVar]);
         case "max":
-          if (validValues.length === 0) return 0;
-          return d3.max(validValues, (d) => +d[xyVar]);
+          return d3.max(values, (d) => d[xyVar]);
         case "avg":
-          if (validValues.length === 0) return 0;
-          return d3.mean(validValues, (d) => +d[xyVar]);
+          return d3.mean(values, (d) => d[xyVar]);
         case "sum":
-          if (validValues.length === 0) return 0;
-          return d3.sum(validValues, (d) => +d[xyVar]);
+          return d3.sum(values, (d) => d[xyVar]);
         default:
           return 0; // no agg applied yet
       }
@@ -128,7 +125,7 @@ export class UtilsService {
 
   /**
    * Returns string of float rounded to up to 2 decimals formatted with suffix.
-   *   e.g. 10,000,000 => 10M; 12,345.6789 => 12.35K; -10,000 => -10K
+   *   e.g. 10,000,000 => 10M; 12,345.6789 => 12.35K
    */
   formatLargeNum(d: number) {
     if (d === 0) return "0";
@@ -136,75 +133,47 @@ export class UtilsService {
     
     // Handle negative numbers
     const isNegative = d < 0;
-    const absValue = Math.abs(d);
+    const absD = Math.abs(d);
     
-    let digits = (Math.log(absValue) * Math.LOG10E + 1) | 0;
-    let formattedNum = "";
+    let digits = (Math.log(absD) * Math.LOG10E + 1) | 0;
+    let result = "";
     
     if (digits >= 13) {
-      formattedNum = `${Math.round((absValue / 1000000000000 + Number.EPSILON) * 100) / 100}T`;
+      result = `${Math.round((absD / 1000000000000 + Number.EPSILON) * 100) / 100}T`;
     } else if (digits >= 10) {
-      formattedNum = `${Math.round((absValue / 1000000000 + Number.EPSILON) * 100) / 100}B`;
+      result = `${Math.round((absD / 1000000000 + Number.EPSILON) * 100) / 100}B`;
     } else if (digits >= 7) {
-      formattedNum = `${Math.round((absValue / 1000000 + Number.EPSILON) * 100) / 100}M`;
+      result = `${Math.round((absD / 1000000 + Number.EPSILON) * 100) / 100}M`;
     } else if (digits >= 4) {
-      formattedNum = `${Math.round((absValue / 1000 + Number.EPSILON) * 100) / 100}K`;
+      result = `${Math.round((absD / 1000 + Number.EPSILON) * 100) / 100}K`;
     } else {
-      formattedNum = `${Math.round((absValue + Number.EPSILON) * 100) / 100}`;
+      result = `${Math.round((absD + Number.EPSILON) * 100) / 100}`;
     }
     
-    return isNegative ? `-${formattedNum}` : formattedNum;
+    return isNegative ? `-${result}` : result;
   }
 
-  /**
-   * Colors `dataPoint` based on points in `dataList`.
-   */
-  colorDataPoint(context, dataPoint, dataList) {
-    let dataset = context.appConfig[context.global.appMode];
-    if (context.global.appType == "CONTROL" || dataPoint["timesVisited"] == 0) {
-      // no bias coloring!!
-      dataPoint["ratioTimesVisited"] = 0;
-      dataPoint["color"] = "white";
-    } else {
-      // bias color
-      switch (dataset["colorByMode"]) {
-        case "abs":
-          const sumVisits = dataList.reduce(this.sumTimesVisited, 0) as number;
-          dataPoint["ratioTimesVisited"] = dataPoint["timesVisited"] / sumVisits;
-          dataPoint["color"] = context.userConfig.focusSequentialColorScale(dataPoint["ratioTimesVisited"]);
-          break;
-        case "rel":
-          const maxVisits = dataList.reduce(this.maxTimesVisited, 0) as number;
-          dataPoint["ratioTimesVisited"] = dataPoint["timesVisited"] / maxVisits;
-          dataPoint["color"] = context.userConfig.focusSequentialColorScale(dataPoint["ratioTimesVisited"]);
-          break;
-        case "binary":
-          const visited = dataPoint["timesVisited"] > 0;
-          dataPoint["ratioTimesVisited"] = !visited ? 0 : 1;
-          dataPoint["color"] = !visited
-            ? "white"
-            : context.userConfig.focusSequentialColorScale(dataPoint["ratioTimesVisited"]);
-          break;
-        default:
-          dataPoint["ratioTimesVisited"] = 0;
-          dataPoint["color"] = "white";
-          break;
-      }
-    }
-  }
+
 
   /**
    * Returns new message object for communicating with backend server.
+   * This is the standardized method for all interaction messages.
    */
-  initializeNewMessage(interactionType: string, data: any = {}): Message {
+  initializeNewMessage(context: any, interactionType?: string, data: any = {}): Message {
     const participantId = localStorage.getItem('userId') || "anonymous";
+    
+    // Get current app state from context if available
+    const appMode = context?.global?.appMode || this.appMode;
+    const appType = context?.global?.appType || this.appType;
+    const appLevel = context?.global?.appLevel || this.appLevel;
+    const chartType = context?.currentPlotType || context?.appConfig?.[context?.global?.appMode]?.["chartType"] || '';
 
     return {
-      appMode: this.appMode,
-      appType: this.appType,
-      appLevel: this.appLevel,
-      chartType: '',
-      interactionType,
+      appMode,
+      appType,
+      appLevel,
+      chartType,
+      interactionType: interactionType || '',
       interactionDuration: 0,
       interactionAt: new Date().toISOString(),
       participantId,
@@ -212,8 +181,51 @@ export class UtilsService {
       createdAt: new Date().getTime(),
       eventX: 0,
       eventY: 0,
-      group:"control"
-    };
+      group: "control"
+    } as Message;
+  }
+
+  /**
+   * Colors a data point based on interaction patterns
+   */
+  colorDataPoint(context, dataPoint, dataList) {
+    // Simplified color assignment - just assign white as default
+    if (dataPoint && !dataPoint.hasOwnProperty("color")) {
+      dataPoint["color"] = "white";
+    }
+  }
+
+  /**
+   * Validates and standardizes interaction message before sending
+   */
+  validateAndStandardizeMessage(message) {
+    // Ensure required fields exist
+    if (!message.interactionType) {
+      console.warn("Interaction message missing interactionType:", message);
+      return false;
+    }
+    
+    // Ensure data object exists with standard fields
+    if (!message.data) {
+      message.data = {};
+    }
+    
+    // Standardize common fields
+    if (!message.data.hasOwnProperty('eventX')) message.data.eventX = null;
+    if (!message.data.hasOwnProperty('eventY')) message.data.eventY = null;
+    
+    // Ensure timing fields
+    if (!message.interactionAt) message.interactionAt = this.getCurrentTime();
+    if (!message.interactionDuration) message.interactionDuration = 0;
+    
+    // Ensure participant ID
+    if (!message.participantId) message.participantId = "anonymous";
+    
+    // Ensure group
+    if (!message.group) message.group = "socratic";
+    
+
+    return true;
   }
 
   /**
@@ -229,7 +241,8 @@ export class UtilsService {
       dataset["selectedObjects"][id] = d;
       context.userConfig["originalDatasetDict"][id]["selected"] = true;
       /* Prepare and Send New Message - Start */
-      let message = this.initializeNewMessage(InteractionTypes.CLICK_ADD_ITEM);
+      let message = this.initializeNewMessage(context);
+      message.interactionType = InteractionTypes.CLICK_ADD_ITEM;
       message.data["id"] = id;
       message.data["x"] = {
         name: dataset["xVar"],
@@ -241,7 +254,11 @@ export class UtilsService {
       };
       message.data["eventX"] = event.clientX;
       message.data["eventY"] = event.clientY;
-      context.chatService.sendInteractionResponse(message);
+      
+      // Validate and send
+      if (this.validateAndStandardizeMessage(message)) {
+        context.chatService.sendStandardizedInteraction(message);
+      }
       /* Prepare and Send New Message - End */
     }
   }
@@ -258,7 +275,8 @@ export class UtilsService {
       context.userConfig["originalDatasetDict"][id]["selected"] = false;
       delete dataset["selectedObjects"][id];
       /* Prepare and Send New Message - Start */
-      let message = this.initializeNewMessage(InteractionTypes.CLICK_REMOVE_ITEM);
+      let message = this.initializeNewMessage(context);
+      message.interactionType = InteractionTypes.CLICK_REMOVE_ITEM;
       message.data["id"] = id;
       message.data["x"] = {
         name: dataset["xVar"],
@@ -270,7 +288,11 @@ export class UtilsService {
       };
       message.data["eventX"] = event.clientX;
       message.data["eventY"] = event.clientY;
-      context.chatService.sendInteractionResponse(message);
+      
+      // Validate and send
+      if (this.validateAndStandardizeMessage(message)) {
+        context.chatService.sendStandardizedInteraction(message);
+      }
       /* Prepare and Send New Message - End */
     }
   }
@@ -286,6 +308,9 @@ export class UtilsService {
     if (dataset["selectedGroups"].hasOwnProperty(meta.binLabel)) {
       // remove group and un-select all points in the group
       delete dataset["selectedGroups"][meta.binLabel];
+      
+      const validDataPoints = meta.binData.filter(d => d[dataset["primaryKey"]] !== "-");
+      
       meta.binData.forEach((d) => {
         const id = d[dataset["primaryKey"]];
         if (id !== "-") {
@@ -298,12 +323,15 @@ export class UtilsService {
             // delete id from selectedObjects
             delete dataset["selectedObjects"][id];
             context.userConfig["originalDatasetDict"][id]["selected"] = false;
+            
           }
         }
       });
     } else {
       // add group and select all points in the group
       dataset["selectedGroups"][meta.binLabel] = meta.binData;
+      
+      
       meta.binData.forEach((d) => {
         const id = d[dataset["primaryKey"]];
         if (id !== "-") {
@@ -312,6 +340,8 @@ export class UtilsService {
           xValues.push(d["xVar"]);
           yValues.push(d["yVar"]);
           d["selected"] = true;
+          
+          
           if (!dataset["selectedObjects"].hasOwnProperty(id)) {
             // add id to selectedObjects
             dataset["selectedObjects"][id] = d;
@@ -321,7 +351,8 @@ export class UtilsService {
       });
     }
     /* Prepare and Send New Message - Start */
-    let message = this.initializeNewMessage(InteractionTypes.CLICK_GROUP);
+    let message = this.initializeNewMessage(context);
+    message.interactionType = InteractionTypes.CLICK_GROUP;
     message.data["id"] = ids;
     message.data["x"] = {
       name: dataset["xVar"],
@@ -339,7 +370,11 @@ export class UtilsService {
     };
     message.data["eventX"] = event.clientX;
     message.data["eventY"] = event.clientY;
-    context.chatService.sendInteraction(message);
+    
+    // Validate and send
+    if (this.validateAndStandardizeMessage(message)) {
+      context.chatService.sendStandardizedInteraction(message);
+    }
     /* Prepare and Send New Message - End */
   }
 
@@ -347,49 +382,37 @@ export class UtilsService {
    * Adds the hovered item to an object of hovered datapoints.
    */
   mouseoverItem(context, event, d, element = null, styleAttr = null) {
+    let dataset = context.appConfig[context.global.appMode];
     context.userConfig["hoverStartTime"] = this.getCurrentTime();
     if (!context.userConfig["hoverTimer"]) {
       // no hover timer function yet => set one to act after delay
       let this_ = this;
-      let dataset = context.appConfig[context.global.appMode];
       dataset["hoveredObject"] = d; // add data to details table
       const delay = 350; // 350 ms delay before hover counts as an interaction
       context.userConfig["hoverTimer"] = setTimeout(function () {
         context.userConfig["hoverTimer"] = null;
         /* Prepare and Send New Message - Start */
-        let message = this_.initializeNewMessage(InteractionTypes.MOUSEOVER_ITEM);
-        message.data = {
-          id: d[dataset["primaryKey"]],
-          x: {
-            name: dataset["xVar"],
-            value: d["xVar"]
-          },
-          y: {
-            name: dataset["yVar"],
-            value: d["yVar"]
-          },
-          pointData: d,
-          eventX: event.clientX,
-          eventY: event.clientY
-        };
+        let message = this_.initializeNewMessage(context);
         let startTime = context.userConfig["hoverStartTime"];
         let currentTime = this_.getCurrentTime();
         message.interactionDuration = currentTime - startTime;
-        message.data = {
-          id: d[dataset["primaryKey"]],
-          x: {
-            name: dataset["xVar"],
-            value: d["xVar"]
-          },
-          y: {
-            name: dataset["yVar"],
-            value: d["yVar"]
-          },
-          pointData: d, // Include all point data
-          eventX: event.clientX,
-          eventY: event.clientY
+        message.interactionType = InteractionTypes.MOUSEOVER_ITEM;
+        message.data["id"] = d[dataset["primaryKey"]];
+        message.data["x"] = {
+          name: dataset["xVar"],
+          value: d["xVar"],
         };
-        context.chatService.sendInteraction(message);
+        message.data["y"] = {
+          name: dataset["yVar"],
+          value: d["yVar"],
+        };
+        message.data["eventX"] = event.clientX;
+        message.data["eventY"] = event.clientY;
+        
+        // Validate and send
+        if (this_.validateAndStandardizeMessage(message)) {
+          context.chatService.sendStandardizedInteraction(message);
+        }
         /* Prepare and Send New Message - End */
       }, delay);
     }
@@ -408,39 +431,27 @@ export class UtilsService {
     } else {
       // Hover was long enough => count as an interaction, update server
       /* Prepare and Send New Message - Start */
-      let message = this.initializeNewMessage(InteractionTypes.MOUSEOUT_ITEM);
-      message.data = {
-        id: d[dataset["primaryKey"]],
-        x: {
-          name: dataset["xVar"],
-          value: d["xVar"]
-        },
-        y: {
-          name: dataset["yVar"],
-          value: d["yVar"]
-        },
-        pointData: d,
-        eventX: event.clientX,
-        eventY: event.clientY
-      };
+      let message = this.initializeNewMessage(context);
       let startTime = context.userConfig["hoverStartTime"];
       let currentTime = this.getCurrentTime();
       message.interactionDuration = currentTime - startTime;
-      message.data = {
-        id: d[dataset["primaryKey"]],
-        x: {
-          name: dataset["xVar"],
-          value: d["xVar"]
-        },
-        y: {
-          name: dataset["yVar"],
-          value: d["yVar"]
-        },
-        pointData: d, // Include all point data
-        eventX: event.clientX,
-        eventY: event.clientY
+      message.interactionType = InteractionTypes.MOUSEOUT_ITEM;
+      message.data["id"] = d[dataset["primaryKey"]];
+      message.data["x"] = {
+        name: dataset["xVar"],
+        value: d["xVar"],
       };
-      context.chatService.sendInteraction(message);
+      message.data["y"] = {
+        name: dataset["yVar"],
+        value: d["yVar"],
+      };
+      message.data["eventX"] = event.clientX;
+      message.data["eventY"] = event.clientY;
+      
+      // Validate and send
+      if (this.validateAndStandardizeMessage(message)) {
+        context.chatService.sendStandardizedInteraction(message);
+      }
       /* Prepare and Send New Message - End */
     }
   }
@@ -454,6 +465,12 @@ export class UtilsService {
     let yValues = [];
     let dataset = context.appConfig[context.global.appMode];
     let originalDatasetDict = context.userConfig["originalDatasetDict"];
+    
+    // Check if we're already hovering over the same bar to prevent continuous interactions
+    if (context.userConfig["lastHoveredBar"] === meta.binLabel) {
+      return; // Already hovering over this bar, don't trigger again
+    }
+    
     // update hovered Objects and collect them for server
     dataset["hoveredObjects"]["binName"] = meta.binLabel;
     switch (meta.aggAxis) {
@@ -477,7 +494,6 @@ export class UtilsService {
             xValues.push(d["xVar"]);
             yValues.push(d["yVar"]);
             // use dict OBJECT to update source data by reference!
-            this.colorDataPoint(context, dataPoint, meta.binData);
             hoveredPoints[id] = dataPoint; // add new points to details table
           } else if (meta.aggAxis == "y-axis" && dataPoint[dataset["yVar"]] === meta.binValue) {
             // order of insertion is preserved for the server! super important!!
@@ -485,7 +501,6 @@ export class UtilsService {
             xValues.push(d["xVar"]);
             yValues.push(d["yVar"]);
             // use dict OBJECT to update source data by reference!
-            this.colorDataPoint(context, dataPoint, meta.binData);
             hoveredPoints[id] = dataPoint; // add new points to details table
           }
         } else {
@@ -494,7 +509,6 @@ export class UtilsService {
           xValues.push(d["xVar"]);
           yValues.push(d["yVar"]);
           // use dict OBJECT to update source data by reference!
-          this.colorDataPoint(context, dataPoint, meta.binData);
           hoveredPoints[id] = dataPoint; // add new points to details table
         }
       }
@@ -513,11 +527,16 @@ export class UtilsService {
       context.userConfig["hoverTimer"] = setTimeout(function () {
         // reset timer function and set hovered object properties for point
         context.userConfig["hoverTimer"] = null;
+        
+        // Mark this bar as the last hovered bar to prevent continuous interactions
+        context.userConfig["lastHoveredBar"] = meta.binLabel;
+        
         /* Prepare and Send New Message - Start */
-        let message = this_.initializeNewMessage(InteractionTypes.MOUSEOVER_GROUP);
+        let message = this_.initializeNewMessage(context);
         let startTime = context.userConfig["hoverStartTime"];
         let currentTime = this_.getCurrentTime();
         message.interactionDuration = currentTime - startTime;
+        message.interactionType = InteractionTypes.MOUSEOVER_GROUP;
         message.data["id"] = dataPointIDs;
         message.data["x"] = {
           name: dataset["xVar"],
@@ -535,7 +554,11 @@ export class UtilsService {
         };
         message.data["eventX"] = event.clientX;
         message.data["eventY"] = event.clientY;
-        context.chatService.sendInteractionResponse(message);
+        
+        // Validate and send
+        if (this_.validateAndStandardizeMessage(message)) {
+          context.chatService.sendStandardizedInteraction(message);
+        }
         /* Prepare and Send New Message - End */
       }, delay);
     }
@@ -546,65 +569,82 @@ export class UtilsService {
    */
   mouseoutGroup(context, event, meta) {
     let dataset = context.appConfig[context.global.appMode];
+    let originalDatasetDict = context.userConfig["originalDatasetDict"];
+    
+    // Reset the last hovered bar to allow new hover interactions
+    context.userConfig["lastHoveredBar"] = null;
+    
+    // clear hovered Objects
+    dataset["hoveredObjects"]["binName"] = null;
+    dataset["hoveredObjects"]["binAttr"] = null;
+    dataset["hoveredObjects"]["points"] = {};
+
+    // clear hover timer if it exists
     if (context.userConfig["hoverTimer"]) {
-      // Reset function if point wasn't hovered on long enough
       clearTimeout(context.userConfig["hoverTimer"]);
       context.userConfig["hoverTimer"] = null;
-      // dataset["hoveredObjects"] = { binName: null, points: {} }; // remove hovered objects
-    } else {
-      // Hover was long enough => send message
-      let dataPointIDs = [];
-      let xValues = [];
-      let yValues = [];
-      meta.binData.forEach((d) => {
-        const id = d[dataset["primaryKey"]];
-        if (id !== "-") {
-          let dataPoint = context.userConfig["originalDatasetDict"][id];
-          if (meta.aggName == "min" || meta.aggName == "max") {
-            // only add points if they are equal to the min or max value
-            if (meta.aggAxis == "x-axis" && dataPoint[dataset["xVar"]] === meta.binValue) {
-              // order of insertion is preserved for the server! super important!!
-              dataPointIDs.push(id);
-              xValues.push(d["xVar"]);
-              yValues.push(d["yVar"]);
-            } else if (meta.aggAxis == "y-axis" && dataPoint[dataset["yVar"]] === meta.binValue) {
-              // order of insertion is preserved for the server! super important!!
-              dataPointIDs.push(id);
-              xValues.push(d["xVar"]);
-              yValues.push(d["yVar"]);
-            }
-          } else {
-            // order of insertion is preserved for the server! super important!!
+    }
+
+    // reset color of hovered element
+    if (event.target) {
+      d3.select(event.target).style("fill", null);
+    }
+
+    // collect data point IDs for server
+    let dataPointIDs = [];
+    let xValues = [];
+    let yValues = [];
+    meta.binData.forEach((d) => {
+      const id = d[dataset["primaryKey"]];
+      if (id !== "-") {
+        let dataPoint = originalDatasetDict[id];
+        if (meta.aggName == "min" || meta.aggName == "max") {
+          // only add points if they are equal to the min or max value
+          if (meta.aggAxis == "x-axis" && dataPoint[dataset["xVar"]] === meta.binValue) {
+            dataPointIDs.push(id);
+            xValues.push(d["xVar"]);
+            yValues.push(d["yVar"]);
+          } else if (meta.aggAxis == "y-axis" && dataPoint[dataset["yVar"]] === meta.binValue) {
             dataPointIDs.push(id);
             xValues.push(d["xVar"]);
             yValues.push(d["yVar"]);
           }
+        } else {
+          dataPointIDs.push(id);
+          xValues.push(d["xVar"]);
+          yValues.push(d["yVar"]);
         }
-      });
-      /* Prepare and Send New Message - Start */
-      let message = this.initializeNewMessage(InteractionTypes.MOUSEOUT_GROUP);
-      let startTime = context.userConfig["hoverStartTime"];
-      let currentTime = this.getCurrentTime();
-      message.interactionDuration = currentTime - startTime;
-      message.data["id"] = dataPointIDs;
-      message.data["x"] = {
-        name: dataset["xVar"],
-        value: xValues,
-      };
-      message.data["y"] = {
-        name: dataset["yVar"],
-        value: yValues,
-      };
-      message.data["agg"] = {
-        name: meta.aggName, // aggregation applied to the bucket
-        axis: meta.aggAxis, // axis the aggregation is applied to
-        value: meta.binValue, // Value of the aggregation
-        label: meta.binLabel, // label of the bucket the agg was applied to
-      };
-      message.data["eventX"] = event.clientX;
-      message.data["eventY"] = event.clientY;
-      context.chatService.sendInteractionResponse(message);
-      /* Prepare and Send New Message - End */
+      }
+    });
+
+    /* Prepare and Send New Message - Start */
+    let message = this.initializeNewMessage(context);
+    let startTime = context.userConfig["hoverStartTime"];
+    let currentTime = this.getCurrentTime();
+    message.interactionDuration = currentTime - startTime;
+    message.interactionType = InteractionTypes.MOUSEOUT_GROUP;
+    message.data["id"] = dataPointIDs;
+    message.data["x"] = {
+      name: dataset["xVar"],
+      value: xValues,
+    };
+    message.data["y"] = {
+      name: dataset["yVar"],
+      value: yValues,
+    };
+    message.data["agg"] = {
+      name: meta.aggName, // aggregation applied to the bucket
+      axis: meta.aggAxis, // axis the aggregation is applied to
+      value: meta.binValue, // Value of the aggregation
+      label: meta.binLabel, // label of the bucket the agg was applied to
+    };
+    message.data["eventX"] = event.clientX;
+    message.data["eventY"] = event.clientY;
+    
+    // Validate and send
+    if (this.validateAndStandardizeMessage(message)) {
+      context.chatService.sendStandardizedInteraction(message);
     }
+    /* Prepare and Send New Message - End */
   }
 }

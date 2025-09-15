@@ -428,6 +428,17 @@ export class StripPlot {
         // Update hovered object data
         context.utilsService.mouseoverItem(context, event, d, this, "stroke");
       })
+      .on("click", function (event, d) {
+        const dataset = context.appConfig[context.global.appMode];
+        const id = d[dataset["primaryKey"]];
+        
+        // Toggle selection: if already selected, remove it; otherwise add it
+        if (dataset["selectedObjects"].hasOwnProperty(id)) {
+          context.utilsService.clickRemoveItem(context, event, d);
+        } else {
+          context.utilsService.clickAddItem(context, event, d);
+        }
+      })
       .on("mouseout", function (event, d) {
         // Reset visual style
         d3.select(this)

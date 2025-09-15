@@ -615,6 +615,15 @@ export class BarChart {
           binData: d[2] || [], // Use the bin data if available, otherwise empty array
         });
       })
+      .on("click", function (event, d) {
+        context.utilsService.clickGroup(context, event, {
+          aggName: aggType,
+          aggAxis: horizontal ? "x-axis" : "y-axis",
+          binLabel: d[0],
+          binValue: d[1],
+          binData: d[2] || [],
+        });
+      })
       .on("mouseout", function (event, d) {
         d3.select(this.parentNode).select("text").attr("display", "none");
         d3.select(this)
@@ -895,6 +904,16 @@ export class BarChart {
         let groupData = prepared.filter((item) => item.xVar === d.group && item.yVar === d.subgroup);
         
         context.utilsService.mouseoverGroup(context, event, this, {
+          aggName: aggType,
+          aggAxis: "y-axis",
+          binLabel: `${d.group} x ${d.subgroup}`,
+          binValue: d.value,
+          binData: groupData,
+        });
+      })
+      .on("click", function (event, d) {
+        let groupData = prepared.filter((item) => item.xVar === d.group && item.yVar === d.subgroup);
+        context.utilsService.clickGroup(context, event, {
           aggName: aggType,
           aggAxis: "y-axis",
           binLabel: `${d.group} x ${d.subgroup}`,

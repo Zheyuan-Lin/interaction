@@ -283,76 +283,20 @@ export class DotPlot {
       .style("font-size", "12px")
       .style("font-weight", "bold")
       .text((d) => d[1].length);
-    
-    // Compute max count for scaling
-    let maxCount = 0;
-    if (buckets && buckets.length > 0) {
-      maxCount = d3.max(buckets, d => d[1].length);
-    }
+
+    // Add interaction handlers to the circles
     enterSelection
       .merge(dataBound)
       .select("circle")
-      .attr("transform", (d) => {
-        const x = context.dotPlotConfig.xScale;
-        const y = context.dotPlotConfig.yScale;
-        d["x"] =
-          !xIsQ && !xIsNA
-            ? x(d[0].split(binLabelDelim)[0]) + x.bandwidth() / 2 // dist horizontal
-            : 0.5 * y.bandwidth(); // align left
-        d["y"] =
-          !yIsQ && !yIsNA
-            ? y(d[0].split(binLabelDelim)[1]) + y.bandwidth() / 2 // dist vertical
-            : context.plotHeight - 0.5 * x.bandwidth(); // align bottom
-        return `translate(${d["x"]}, ${d["y"]})`;
-      })
-      .attr("r", (d) => {
-        // Bubble size by count
-        const count = d[1].length;
-        const minR = 8;
-        const maxR = 0.4 * Math.min(context.dotPlotConfig.xScale.bandwidth(), context.dotPlotConfig.yScale.bandwidth());
-        return count && maxCount ? (minR + (maxR - minR) * (count / maxCount)) : minR;
-      })
-      .style("fill", (d) => {
-        // fill based on interactions with underlying data points!
-        if (context.global.appType == "CONTROL") return "white";
-        switch (dataset["colorByMode"]) {
-          case "abs":
-            const sumInteracted = d[1].reduce(context.utilsService.sumTimesVisited, 0) as number;
-            const sumVisits = prepared.reduce(context.utilsService.sumTimesVisited, 0) as number;
-            return sumInteracted == 0
-              ? "white"
-              : context.userConfig.focusSequentialColorScale(sumInteracted / sumVisits);
-          case "rel":
-            const maxInteracted = d[1].reduce(context.utilsService.maxTimesVisited, 0) as number;
-            const maxVisits = prepared.reduce(context.utilsService.maxTimesVisited, 0) as number;
-            return maxInteracted == 0
-              ? "white"
-              : context.userConfig.focusSequentialColorScale(maxInteracted / maxVisits);
-          case "binary":
-            const visited = d[1].some((el) => el["timesVisited"] > 0);
-            return !visited ? "white" : context.userConfig.focusSequentialColorScale(1);
-          default:
-            return "white";
-        }
-      })
-      .style("fill-opacity", 0.8)
-      .style("stroke", (d) => (d[1].reduce((a, b) => a || b["selected"], false) ? "brown" : "black"))
-      .style("stroke-width", (d) => (d[1].reduce((a, b) => a || b["selected"], false) ? "3px" : "1px"))
-      .style("stroke-dasharray", (d) => {
-        const countSelected = d[1].filter((o) => o["selected"]).length;
-        return countSelected < d[1].length && countSelected > 0 ? "3" : "none";
-      })
       .style("cursor", "pointer")
       .on("click", function (event, d) {
-        if (context.global.appType === "ADMIN") {
-          context.utilsService.clickGroup(context, event, {
-            aggName: null,
-            aggAxis: null,
-            binLabel: d[0],
-            binValue: null,
-            binData: d[1],
-          });
-        }
+        context.utilsService.clickGroup(context, event, {
+          aggName: null,
+          aggAxis: null,
+          binLabel: d[0],
+          binValue: null,
+          binData: d[1],
+        });
       })
       .on("mouseover", function (event, d) {
         // Show the count label
