@@ -8,6 +8,8 @@ export class Message {
   interactionAt: string;
   participantId: string;
   createdAt: number;
+  createdAtReadable: string;
+  createdAtLocal: string;
   data: any;
   eventX: number;
   eventY: number;

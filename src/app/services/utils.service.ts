@@ -40,6 +40,18 @@ export class UtilsService {
   }
 
   /**
+   * Get current timestamp in both Unix and readable formats
+   */
+  getCurrentTimestamp() {
+    const now = new Date();
+    return {
+      unix: now.getTime(),
+      readable: now.toISOString(),
+      local: now.toLocaleString()
+    };
+  }
+
+  /**
    * Creates 2 smaller arrays from attribute list for single item detail view.
    */
   chunkAttrArray(dataset) {
@@ -161,6 +173,7 @@ export class UtilsService {
    */
   initializeNewMessage(context: any, interactionType?: string, data: any = {}): Message {
     const participantId = localStorage.getItem('userId') || "anonymous";
+    const timestamp = this.getCurrentTimestamp();
     
     // Get current app state from context if available
     const appMode = context?.global?.appMode || this.appMode;
@@ -175,10 +188,12 @@ export class UtilsService {
       chartType,
       interactionType: interactionType || '',
       interactionDuration: 0,
-      interactionAt: new Date().toISOString(),
+      interactionAt: timestamp.readable,
       participantId,
       data,
-      createdAt: new Date().getTime(),
+      createdAt: timestamp.unix,
+      createdAtReadable: timestamp.readable,
+      createdAtLocal: timestamp.local,
       eventX: 0,
       eventY: 0,
       group: "control"

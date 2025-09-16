@@ -427,9 +427,9 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       context.chatService.getExternalQuestion().subscribe({
         next: (questionData: any) => {
           const formattedQuestion: Question = {
-            id: questionData.id || Date.now().toString(),
+            id: questionData.id || this.utilsService.getCurrentTimestamp().unix.toString(),
             text: questionData.text || "What do you think about this insight?",
-            timestamp: questionData.timestamp || new Date().toISOString(),
+            timestamp: questionData.timestamp || this.utilsService.getCurrentTimestamp().readable,
             type: questionData.type || "question"
           };
           
@@ -443,9 +443,9 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       context.chatService.getExternalQuestion().subscribe({
         next: (questionData: any) => {
           const formattedQuestion: Question = {
-            id: questionData.id || Date.now().toString(),
+            id: questionData.id || this.utilsService.getCurrentTimestamp().unix.toString(),
             text: questionData.text || "What do you think about this insight?",
-            timestamp: questionData.timestamp || new Date().toISOString(),
+            timestamp: questionData.timestamp || this.utilsService.getCurrentTimestamp().readable,
             type: questionData.type || "question"
           };
           
@@ -781,7 +781,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       path: path,
       params: params,
       completed: true,
-      timestamp: new Date().toLocaleString(),
+      timestamp: this.utilsService.getCurrentTimestamp().local,
       eventX: null,
       eventY: null,
     });
@@ -793,7 +793,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     this.chatService.sendMessageToSaveLogs();
     this.chatService.removeAllListenersAndDisconnectFromSocket();
     this.global["app-" + this.global.appLevel]["completed"] = true;
-    this.global["app-" + this.global.appLevel]["timestamp"] = new Date().toLocaleString();
+    this.global["app-" + this.global.appLevel]["timestamp"] = this.utilsService.getCurrentTimestamp().local;
     this.router.navigate([path], { queryParams: params });
   }
 
@@ -1618,7 +1618,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     // Also send to legacy insights endpoint for backward compatibility
     let insightMessage = new Insight();
     insightMessage.text = this.userInsight.trim();
-    insightMessage.timestamp = new Date().toISOString();
+    insightMessage.timestamp = this.utilsService.getCurrentTimestamp().readable;
     insightMessage.group = "socratic";
     insightMessage.participantId = localStorage.getItem('userId');
     this.chatService.sendInsights(insightMessage);
@@ -1659,7 +1659,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       
       // Update completion status
       this.global["app-" + this.global.appLevel]["completed"] = true;
-      this.global["app-" + this.global.appLevel]["timestamp"] = new Date().toLocaleString();
+      this.global["app-" + this.global.appLevel]["timestamp"] = this.utilsService.getCurrentTimestamp().local;
       
       // Navigate to post survey with userId
       this.router.navigate(['/post'], { 
@@ -1770,7 +1770,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
         type: "delete_insight",
         index: index,
         participantId: localStorage.getItem('userId'),
-        timestamp: new Date().toISOString()
+        timestamp: this.utilsService.getCurrentTimestamp().readable
       };
       this.chatService.sendInsights(legacyMessage);
     }
@@ -1793,7 +1793,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       const oldText = this.pastInsights[index].text;
       
       this.pastInsights[index].text = this.editingInsightText.trim();
-      this.pastInsights[index].timestamp = new Date().toLocaleString();
+      this.pastInsights[index].timestamp = this.utilsService.getCurrentTimestamp().local;
       
       // Send edit using standardized interaction recording system
       let message = this.utilsService.initializeNewMessage(this, InteractionTypes.EDIT_USER_INSIGHT, {
@@ -1817,7 +1817,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
         oldText: oldText,
         newText: this.editingInsightText.trim(),
         participantId: localStorage.getItem('userId'),
-        timestamp: new Date().toISOString()
+        timestamp: this.utilsService.getCurrentTimestamp().readable
       };
       this.chatService.sendInsights(legacyMessage);
     }
@@ -1845,7 +1845,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     if (newText !== null && newText.trim() !== "") {
       const oldText = insight.text;
       this.pastInsights[index].text = newText.trim();
-      this.pastInsights[index].timestamp = new Date().toLocaleString();
+      this.pastInsights[index].timestamp = this.utilsService.getCurrentTimestamp().local;
       
       // Send edit using standardized interaction recording system
       let message = this.utilsService.initializeNewMessage(this, InteractionTypes.EDIT_USER_INSIGHT, {
@@ -1870,7 +1870,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
         oldText: oldText,
         newText: newText.trim(),
         participantId: localStorage.getItem('userId'),
-        timestamp: new Date().toISOString()
+        timestamp: this.utilsService.getCurrentTimestamp().readable
       };
       this.chatService.sendInsights(legacyMessage);
     }
