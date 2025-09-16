@@ -166,7 +166,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
   `]
 })
 export class PostPageComponent implements OnInit {
-  private readonly SURVEY_URL = 'https://qfreeaccountssjc1.az1.qualtrics.com/jfe/form/SV_bjcPehy9IOhUTNI';
+  private readonly SURVEY_URL = 'https://ecas.qualtrics.emory.edu/jfe/form/SV_5tEIBxhT9NwdDIa';
   
   userId: string | null = null;
   showCopied: boolean = false;
@@ -183,18 +183,7 @@ export class PostPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Get userId from URL parameters first, then fallback to localStorage
-    this.route.queryParams.subscribe(params => {
-      const urlUserId = params['userId'];
-      if (urlUserId) {
-        this.userId = urlUserId;
-        localStorage.setItem('userId', urlUserId);
-        console.log('UserId scraped from URL:', urlUserId);
-      } else {
-        this.userId = localStorage.getItem('userId');
-        console.log('UserId loaded from localStorage:', this.userId);
-      }
-    });
+
     
     // Ensure socket connection is established
     this.chatService.connectToSocket();
