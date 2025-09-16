@@ -8,7 +8,7 @@ import { DomSanitizer } from "@angular/platform-browser";
 import { ActivatedRoute } from "@angular/router";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-ngx";
 // local
-import { SessionPage, AppConfig, InteractionTypes, UserConfig } from "../models/config";
+import { SessionPage, AppConfig, InteractionTypes, UserConfig, APP_GROUP_NAME } from "../models/config";
 import { ChatService } from "../services/socket.service";
 import { UtilsService } from "../services/utils.service";
 import { ScatterPlot } from "../visualizations/main/scatter-plot-component";
@@ -1619,7 +1619,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     let insightMessage = new Insight();
     insightMessage.text = this.userInsight.trim();
     insightMessage.timestamp = this.utilsService.getCurrentTimestamp().readable;
-    insightMessage.group = "socratic";
+    insightMessage.group = APP_GROUP_NAME;
     insightMessage.participantId = localStorage.getItem('userId');
     this.chatService.sendInsights(insightMessage);
     

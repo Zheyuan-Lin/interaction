@@ -2,7 +2,7 @@
 import * as d3 from "d3";
 import { Injectable } from "@angular/core";
 // local
-import { InteractionTypes } from "src/app/models/config";
+import { InteractionTypes, APP_GROUP_NAME } from "src/app/models/config";
 import { Message } from "../models/message";
 
 @Injectable()
@@ -196,7 +196,7 @@ export class UtilsService {
       createdAtLocal: timestamp.local,
       eventX: 0,
       eventY: 0,
-      group: "control"
+      group: APP_GROUP_NAME
     } as Message;
   }
 
@@ -237,7 +237,7 @@ export class UtilsService {
     if (!message.participantId) message.participantId = "anonymous";
     
     // Ensure group
-    if (!message.group) message.group = "socratic";
+    if (!message.group) message.group = APP_GROUP_NAME;
     
 
     return true;

@@ -10,6 +10,9 @@ var participantId = UtilsServiceObj.generateRandomUniqueString(12);
 export const divergentColorRange = ["#a5d6a7", "#eeeeee", "#ef9a9a"];
 export const sequentialColorRange = ["#ffffff", "#3498db"];
 
+// Global group name for all interactions and messages
+export const APP_GROUP_NAME = "control";
+
 @Injectable()
 export class SessionPage {
   constructor(private utils: UtilsService) {}
