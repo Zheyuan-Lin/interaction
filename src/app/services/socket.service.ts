@@ -17,7 +17,10 @@ export class ChatService {
 
   // Add getter for socket ID
   getSocketId(): string {
-    const socketId = this.vizSocket?.ioSocket?.id;
+    // Try multiple ways to get the socket ID
+    const socketId = this.vizSocket?.ioSocket?.id || 
+                    this.vizSocket?.ioSocket?.engine?.id;
+    
     if (socketId) {
       return socketId;
     } else if (this.vizSocket?.ioSocket?.connected) {
@@ -42,28 +45,19 @@ export class ChatService {
 
     // Set up connection event handlers before connecting
     this.vizSocket.on('connect', () => {
-      // Wait for next tick to ensure socket ID is available
-      setTimeout(() => {
-        const socketId = this.vizSocket.ioSocket.id;
-        if (socketId) {
-          console.log('Socket connected successfully with ID:', socketId);
-          // Request attribute distribution on connect with socket ID
-          this.vizSocket.emit('request_attribute_distribution', { socketId });
-        } else {
-          console.log('Socket connected but ID not yet available, retrying...');
-          // Retry after a longer delay
-          setTimeout(() => {
-            const retrySocketId = this.vizSocket.ioSocket.id;
-            if (retrySocketId) {
-              console.log('Socket ID retrieved on retry:', retrySocketId);
-              this.vizSocket.emit('request_attribute_distribution', { socketId: retrySocketId });
-            } else {
-              console.log('Socket ID still not available, proceeding without it');
-              this.vizSocket.emit('request_attribute_distribution', {});
-            }
-          }, 500);
-        }
-      }, 100);
+      console.log('Socket connected successfully');
+      
+      // Try to get socket ID, but don't spam the console
+      const socketId = this.vizSocket?.ioSocket?.id || 
+                      this.vizSocket?.ioSocket?.engine?.id;
+      
+      if (socketId) {
+        console.log('Socket ID retrieved:', socketId);
+        this.vizSocket.emit('request_attribute_distribution', { socketId });
+      } else {
+        // Socket ID not available, but connection works fine without it
+        this.vizSocket.emit('request_attribute_distribution', {});
+      }
     });
 
     this.vizSocket.on('connect_error', (error) => {

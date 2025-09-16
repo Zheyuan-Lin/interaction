@@ -8,7 +8,8 @@ import { DomSanitizer } from "@angular/platform-browser";
 import { ActivatedRoute } from "@angular/router";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-ngx";
 // local
-import { SessionPage, AppConfig, InteractionTypes, UserConfig, APP_GROUP_NAME } from "../models/config";
+import { SessionPage, AppConfig, InteractionTypes, UserConfig } from "../models/config";
+import { APP_GROUP_NAME } from "../constants/app-constants";
 import { ChatService } from "../services/socket.service";
 import { UtilsService } from "../services/utils.service";
 import { ScatterPlot } from "../visualizations/main/scatter-plot-component";
@@ -1911,7 +1912,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
   toggleDataPreview() {
     this.isDataShown = !this.isDataShown;
     
-    // Send interaction tracking
+    // Send interaction tracking for toggling
     let message = this.utilsService.initializeNewMessage(this, InteractionTypes.TOGGLE_DATA_PREVIEW, {
       isDataShown: this.isDataShown,
       eventX: null,
@@ -1921,6 +1922,8 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     if (this.utilsService.validateAndStandardizeMessage(message)) {
       this.chatService.sendStandardizedInteraction(message);
     }
+    
+
   }
 
   /**

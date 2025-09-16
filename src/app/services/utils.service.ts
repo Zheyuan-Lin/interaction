@@ -2,7 +2,8 @@
 import * as d3 from "d3";
 import { Injectable } from "@angular/core";
 // local
-import { InteractionTypes, APP_GROUP_NAME } from "src/app/models/config";
+import { InteractionTypes } from "src/app/models/config";
+import { APP_GROUP_NAME } from "../constants/app-constants";
 import { Message } from "../models/message";
 
 @Injectable()
@@ -196,7 +197,7 @@ export class UtilsService {
       createdAtLocal: timestamp.local,
       eventX: 0,
       eventY: 0,
-      group: APP_GROUP_NAME
+       group: APP_GROUP_NAME
     } as Message;
   }
 
@@ -600,10 +601,7 @@ export class UtilsService {
       context.userConfig["hoverTimer"] = null;
     }
 
-    // reset color of hovered element
-    if (event.target) {
-      d3.select(event.target).style("fill", null);
-    }
+    // Bars should remain white always - no color changes needed
 
     // collect data point IDs for server
     let dataPointIDs = [];

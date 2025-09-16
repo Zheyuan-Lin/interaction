@@ -533,7 +533,7 @@
         </as-split-area>
 
         <!-- ROW: User Insights -->
-        <as-split-area [size]="33">
+        <as-split-area [size]="global.appType == 'ADMIN' ? 33 : 25">
           <div class="list-group h-100">
             <article class="list-group-item">
               <!-- Header -->
@@ -583,14 +583,40 @@
                   <h6 class="mb-3">Your Past Insights</h6>
                   <div class="insight-list">
                     <div class="insight-item" *ngFor="let insight of pastInsights; let i = index">
-                      <div class="insight-text">{{insight.text}}</div>
-                      <div class="insight-timestamp text-muted">
-                        <small><i class="fa fa-clock-o mr-1"></i> {{insight.timestamp}}</small>
+                      <!-- Display mode -->
+                      <div *ngIf="editingInsightIndex !== i">
+                        <div class="insight-text">{{insight.text}}</div>
+                        <div class="insight-timestamp text-muted">
+                          <small><i class="fa fa-clock-o mr-1"></i> {{insight.timestamp}}</small>
+                        </div>
+                        <div class="insight-actions mt-2">
+                          <button class="btn btn-sm btn-link text-primary p-0 mr-2" (click)="startEditInsight(i)" title="Edit">
+                            <i class="fa fa-edit"></i>
+                          </button>
+                          <button class="btn btn-sm btn-link text-danger p-0" (click)="deleteInsight(i)" title="Delete">
+                            <i class="fa fa-trash"></i>
+                          </button>
+                        </div>
                       </div>
-                      <div class="insight-actions mt-2">
-                        <button class="btn btn-sm btn-link text-danger p-0" (click)="deleteInsight(i)" title="Delete">
-                          <i class="fa fa-trash"></i>
-                        </button>
+                      
+                      <!-- Edit mode -->
+                      <div *ngIf="editingInsightIndex === i">
+                        <div class="form-group mb-2">
+                          <textarea 
+                            class="form-control form-control-sm" 
+                            rows="3" 
+                            [(ngModel)]="editingInsightText"
+                            placeholder="Edit your insight...">
+                          </textarea>
+                        </div>
+                        <div class="insight-actions mt-2">
+                          <button class="btn btn-sm btn-success mr-1" (click)="saveEditInsight()" [disabled]="!editingInsightText.trim()">
+                            <i class="fa fa-check mr-1"></i> Save
+                          </button>
+                          <button class="btn btn-sm btn-secondary" (click)="cancelEditInsight()">
+                            <i class="fa fa-times mr-1"></i> Cancel
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
