@@ -13,7 +13,20 @@ export class ChatService {
   ) {}
 
   connectToSocket() {
+    console.log('Attempting to connect to socket server:', this.vizSocket.ioSocket.io.uri);
     this.vizSocket.connect();
+    
+    this.vizSocket.on('connect', () => {
+      console.log('Socket connected successfully');
+    });
+    
+    this.vizSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
+    
+    this.vizSocket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
+    });
   }
 
   removeAllListenersAndDisconnectFromSocket() {

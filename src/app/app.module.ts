@@ -26,7 +26,15 @@ import { PostPageComponent } from './post-page/post-page.component';
 
 const config: SocketIoConfig = {
   url: DeploymentConfig.SERVER_URL,
-  options: { timeout: 60000, autoConnect: false },
+  options: { 
+    timeout: 60000, 
+    autoConnect: false,
+    forceNew: true,
+    transports: ['polling', 'websocket'],
+    upgrade: true,
+    withCredentials: false,
+    extraHeaders: {}
+  },
 };
 
 @NgModule({
