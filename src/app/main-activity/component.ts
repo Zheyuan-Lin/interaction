@@ -300,31 +300,10 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       initializePlotInstance(context, context.currentPlotType);
       context.updateVis();
 
-      /** Connect to Server to Send/Receive Messages over WebSocket */
-      context.chatService.removeAllListenersAndDisconnectFromSocket();
 
       context.chatService.connectToSocket();
 
-      context.chatService.getConnectEventResponse().subscribe((event) => {
-        // Wait for next tick to ensure socket ID is available
-        setTimeout(() => {
-          const socketId = context.chatService.getSocketId();
-          if (socketId !== 'not_connected') {
-            console.log("Connected to socket with ID:", socketId);
-            // Store socket ID in localStorage for persistence
-            localStorage.setItem('socketId', socketId);
-          }
-        }, 0);
-      });
 
-      context.chatService.getDisconnectEventResponse().subscribe((event) => {
-        const socketId = context.chatService.getSocketId();
-        if (socketId !== 'not_connected') {
-          console.log("Disconnected from socket with ID:", socketId);
-          // Clear socket ID from localStorage
-          localStorage.removeItem('socketId');
-        }
-      });
 
       context.chatService.getInteractionResponse().subscribe((obj) => {
         let dataOut = obj["output_data"];
@@ -788,7 +767,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     });
     
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
     
     this.chatService.sendMessageToSaveLogs();
@@ -993,7 +972,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     });
     
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
     /* Prepare and Send New Message - End */
 
@@ -1012,7 +991,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     });
     
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
     /* Prepare and Send New Message - End */
   }
@@ -1029,7 +1008,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     });
     
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
     /* Prepare and Send New Message - End */
   }
@@ -1071,7 +1050,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     });
     
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
     /* Prepare and Send New Message - End */
     if ($event) $event.stopPropagation();
@@ -1108,7 +1087,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       });
       
       if (this.utilsService.validateAndStandardizeMessage(message)) {
-        this.chatService.sendStandardizedInteraction(message);
+        this.chatService.sendInteractionResponse(message);
       }
       /* Prepare and Send New Message - End */
     } else {
@@ -1125,7 +1104,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     });
     
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
       /* Prepare and Send New Message - End */
     }
@@ -1151,7 +1130,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       });
       
       if (this.utilsService.validateAndStandardizeMessage(message)) {
-        this.chatService.sendStandardizedInteraction(message);
+        this.chatService.sendInteractionResponse(message);
       }
       /* Prepare and Send New Message - End */
     } else {
@@ -1168,7 +1147,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     });
     
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
       /* Prepare and Send New Message - End */
     }
@@ -1190,7 +1169,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     });
     
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
     /* Prepare and Send New Message - End */
   }
@@ -1209,7 +1188,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     });
     
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
     /* Prepare and Send New Message - End */
   }
@@ -1240,7 +1219,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       });
       
       if (this.utilsService.validateAndStandardizeMessage(message)) {
-        this.chatService.sendStandardizedInteraction(message);
+        this.chatService.sendInteractionResponse(message);
       }
       /* Prepare and Send New Message - End */
     }
@@ -1267,7 +1246,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     });
     
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
     /* Prepare and Send New Message - End */
   }
@@ -1294,7 +1273,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     });
     
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
     /* Prepare and Send New Message - End */
   }
@@ -1318,7 +1297,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       });
       
       if (this.utilsService.validateAndStandardizeMessage(message)) {
-        this.chatService.sendStandardizedInteraction(message);
+        this.chatService.sendInteractionResponse(message);
       }
       /* Prepare and Send New Message - End */
     }
@@ -1351,7 +1330,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       });
       
       if (this.utilsService.validateAndStandardizeMessage(message)) {
-        this.chatService.sendStandardizedInteraction(message);
+        this.chatService.sendInteractionResponse(message);
       }
       /* Prepare and Send New Message - End */
     }
@@ -1395,7 +1374,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     });
     
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
     /* Prepare and Send New Message - End */
 
@@ -1411,7 +1390,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       });
       
       if (this.utilsService.validateAndStandardizeMessage(message)) {
-        this.chatService.sendStandardizedInteraction(message);
+        this.chatService.sendInteractionResponse(message);
       }
       /* Prepare and Send New Message - End */
     }
@@ -1433,7 +1412,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       });
       
       if (this.utilsService.validateAndStandardizeMessage(message)) {
-        this.chatService.sendStandardizedInteraction(message);
+        this.chatService.sendInteractionResponse(message);
       }
       /* Prepare and Send New Message - End */
     }
@@ -1451,7 +1430,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     });
     
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
     /* Prepare and Send New Message - End */
     
@@ -1613,7 +1592,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     
     // Validate and standardize message before sending
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
     
     // Also send to legacy insights endpoint for backward compatibility
@@ -1651,7 +1630,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       });
       
       if (this.utilsService.validateAndStandardizeMessage(message)) {
-        this.chatService.sendStandardizedInteraction(message);
+        this.chatService.sendInteractionResponse(message);
       }
       
       // Save any pending data
@@ -1763,7 +1742,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       
       // Validate and send
       if (this.utilsService.validateAndStandardizeMessage(message)) {
-        this.chatService.sendStandardizedInteraction(message);
+        this.chatService.sendInteractionResponse(message);
       }
       
       // Also send to legacy insights endpoint for backward compatibility
@@ -1808,7 +1787,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       
       // Validate and send
       if (this.utilsService.validateAndStandardizeMessage(message)) {
-        this.chatService.sendStandardizedInteraction(message);
+        this.chatService.sendInteractionResponse(message);
       }
       
       // Also send to legacy insights endpoint for backward compatibility
@@ -1861,7 +1840,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
       
       // Validate and send
       if (this.utilsService.validateAndStandardizeMessage(message)) {
-        this.chatService.sendStandardizedInteraction(message);
+        this.chatService.sendInteractionResponse(message);
       }
       
       // Also send to legacy insights endpoint for backward compatibility
@@ -1920,7 +1899,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
     });
     
     if (this.utilsService.validateAndStandardizeMessage(message)) {
-      this.chatService.sendStandardizedInteraction(message);
+      this.chatService.sendInteractionResponse(message);
     }
     
 

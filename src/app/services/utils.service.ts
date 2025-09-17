@@ -273,7 +273,7 @@ export class UtilsService {
       
       // Validate and send
       if (this.validateAndStandardizeMessage(message)) {
-        context.chatService.sendStandardizedInteraction(message);
+        context.chatService.sendInteractionResponse(message);
       }
       /* Prepare and Send New Message - End */
     }
@@ -307,7 +307,7 @@ export class UtilsService {
       
       // Validate and send
       if (this.validateAndStandardizeMessage(message)) {
-        context.chatService.sendStandardizedInteraction(message);
+        context.chatService.sendInteractionResponse(message);
       }
       /* Prepare and Send New Message - End */
     }
@@ -389,7 +389,7 @@ export class UtilsService {
     
     // Validate and send
     if (this.validateAndStandardizeMessage(message)) {
-      context.chatService.sendStandardizedInteraction(message);
+      context.chatService.sendInteractionResponse(message);
     }
     /* Prepare and Send New Message - End */
   }
@@ -427,7 +427,7 @@ export class UtilsService {
         
         // Validate and send
         if (this_.validateAndStandardizeMessage(message)) {
-          context.chatService.sendStandardizedInteraction(message);
+          context.chatService.sendInteractionResponse(message);
         }
         /* Prepare and Send New Message - End */
       }, delay);
@@ -466,7 +466,7 @@ export class UtilsService {
       
       // Validate and send
       if (this.validateAndStandardizeMessage(message)) {
-        context.chatService.sendStandardizedInteraction(message);
+        context.chatService.sendInteractionResponse(message);
       }
       /* Prepare and Send New Message - End */
     }
@@ -573,7 +573,7 @@ export class UtilsService {
         
         // Validate and send
         if (this_.validateAndStandardizeMessage(message)) {
-          context.chatService.sendStandardizedInteraction(message);
+          context.chatService.sendInteractionResponse(message);
         }
         /* Prepare and Send New Message - End */
       }, delay);
@@ -656,7 +656,7 @@ export class UtilsService {
     
     // Validate and send
     if (this.validateAndStandardizeMessage(message)) {
-      context.chatService.sendStandardizedInteraction(message);
+      context.chatService.sendInteractionResponse(message);
     }
     /* Prepare and Send New Message - End */
   }
