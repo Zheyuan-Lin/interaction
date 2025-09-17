@@ -13,41 +13,7 @@ export class ChatService {
   ) {}
 
   connectToSocket() {
-    
-    // Safe access to socket options
-    if (this.vizSocket && this.vizSocket.ioSocket && this.vizSocket.ioSocket.opts) {
-    } else {
-      console.log('Socket not yet initialized, checking config...');
-      console.log('Socket service available:', !!this.vizSocket);
-    }
-    
     this.vizSocket.connect();
-    
-    // Debug connection events
-    this.vizSocket.on('connect', () => {
-    });
-    
-    this.vizSocket.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error);
-      if (error.type) console.error('Error type:', error.type);
-      if (error.description) console.error('Error description:', error.description);
-    });
-    
-    this.vizSocket.on('disconnect', (reason) => {
-      console.warn('🔌 Socket disconnected:', reason);
-    });
-    
-    this.vizSocket.on('reconnect', (attemptNumber) => {
-      console.log('🔄 Socket reconnected after', attemptNumber, 'attempts');
-    });
-    
-    this.vizSocket.on('reconnect_attempt', (attemptNumber) => {
-      console.log('🔄 Socket reconnection attempt:', attemptNumber);
-    });
-    
-    this.vizSocket.on('reconnect_error', (error) => {
-      console.error('❌ Socket reconnection error:', error);
-    });
   }
 
   removeAllListenersAndDisconnectFromSocket() {
@@ -72,21 +38,7 @@ export class ChatService {
   }
 
   sendInteractionResponse(payload) {
-    
-    // Check connection status using the underlying ioSocket
-    const isConnected = this.vizSocket.ioSocket && 
-                       (this.vizSocket.ioSocket.connected || 
-                        this.vizSocket.ioSocket.readyState === 'open');
-    
-    if (!isConnected) {
-      console.error('❌ Cannot send interaction - socket not connected');
-      console.log('Attempting to reconnect...');
-      this.vizSocket.connect();
-      return;
-    }
-    
     this.vizSocket.emit("recieve_interaction", payload);
-    console.log('Interation type:', payload.interactionType);
   }
   getDisconnectEventResponse() {
     return this.vizSocket.fromEvent("disconnect").pipe(map((obj) => obj));
