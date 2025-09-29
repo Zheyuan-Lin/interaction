@@ -229,23 +229,22 @@
                     
                   </div>
                 </div>
-                  <!-- <small>
-                    <i class="fa fa-info-circle"></i>
-                    <strong>Scale of political views:</strong><br>
-                    <strong>-3</strong> "strongly oppose"<br>
-                    <strong>+3</strong> "strongly support"
-                  </small> -->
               </div>
         
               <!-- Scale Indicator for Quantitative Attributes -->
-              <div class="scale-indicator" *ngIf="hasQuantitativeAttributesWithScale()">
-
-              </div>
-            </article>
+           <!-- Scale Indicator for Quantitative Attributes -->
+           <div class="scale-indicator" *ngIf="hasQuantitativeAttributesWithScale()">
+            <small class="text-muted d-block">
+              <i class="fa fa-info-circle mr-1"></i>
+              <strong>Scale of political views:</strong><br>
+              <span class="ml-3"><strong>-3</strong> "strongly oppose" | <strong>+3</strong> "strongly support"</span>
+            </small>
           </div>
-        </as-split-area>
-      </as-split>
+        </article>
+      </div>
     </as-split-area>
+  </as-split>
+</as-split-area>
 
     <!-- COLUMN: Filters, Encodings, and Configurations -->
     <as-split-area [size]="20">
