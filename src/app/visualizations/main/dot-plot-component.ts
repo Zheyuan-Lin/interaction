@@ -75,8 +75,13 @@ export class DotPlot {
     // Add dots groups
     context.dotPlotConfig.dotsGroup = context.plotGroup.append("g").classed("dots", true);
 
-    // Add legend group (empty for now)
+    // Add legend group, text and gradient rectangle
     context.dotPlotConfig.legendGroup = context.plotGroup.append("g").classed("legend", true);
+    if (context.global.appType !== "CONTROL") {
+      let xPos = context.plotWidth; // x position of element, gets updated dynamically
+      const pad = 5; // padding between elements
+      const gradRectWidth = context.plotWidth / 5; // width of gradient rectangle
+    }
 
     // Create unsupported text to display if chart cannot render
     context.dotPlotConfig.unsupportedMessage = `
@@ -104,9 +109,7 @@ export class DotPlot {
     if (!originalDatasetDict) return;
 
     // Clear unsupported message
-    if (context.dotPlotConfig.dotsGroup) {
-      context.dotPlotConfig.dotsGroup.select(".unsupported-text").remove();
-    }
+    context.dotPlotConfig.dotsGroup.select(".unsupported-text").remove();
 
     // create raw data object
     let rawData = Object.keys(originalDatasetDict).map((id) => {
@@ -117,26 +120,31 @@ export class DotPlot {
       };
     });
 
-    // filter raw data into a prepared data set
-    let prepared = rawData;
-    ["N", "O"].forEach((dataType) =>
-      dataset.attributeDatatypeList[dataType].forEach((attr) => {
-        let filterModel = dataset["attributes"][attr]["filterModel"];
-        prepared = prepared.filter((item) => {
-          return filterModel.indexOf(item[attr]) !== -1;
-        });
-      })
-    );
-    ["T", "Q"].forEach((dataType) =>
-      dataset.attributeDatatypeList[dataType].forEach((attr) => {
-        let filterModel = dataset["attributes"][attr]["filterModel"];
-        prepared = prepared.filter((item) => {
-          return (
-            parseFloat(item[attr]) >= parseFloat(filterModel[0]) && parseFloat(item[attr]) <= parseFloat(filterModel[1])
-          );
-        });
-      })
-    );
+    // filter raw data into a prepared data set - optimized single pass
+    let prepared = rawData.filter((item) => {
+      // Check all N and O attributes in one pass
+      for (let dataType of ["N", "O"]) {
+        for (let attr of dataset.attributeDatatypeList[dataType]) {
+          let filterModel = dataset["attributes"][attr]["filterModel"];
+          if (filterModel.indexOf(item[attr]) === -1) {
+            return false;
+          }
+        }
+      }
+      // Check all Q and T attributes in one pass
+      for (let dataType of ["Q", "T"]) {
+        for (let attr of dataset.attributeDatatypeList[dataType]) {
+          let filterModel = dataset["attributes"][attr]["filterModel"];
+          let value = parseFloat(item[attr]);
+          let min = parseFloat(filterModel[0]);
+          let max = parseFloat(filterModel[1]);
+          if (value < min || value > max) {
+            return false;
+          }
+        }
+      }
+      return true;
+    });
 
     // Create scales and axes based on vis matrix
     let buckets = [];
@@ -155,9 +163,7 @@ export class DotPlot {
       buckets = []; // ensures no points are drawn
       context.dotPlotConfig.xAxisGroup.selectAll("*").remove();
       context.dotPlotConfig.yAxisGroup.selectAll("*").remove();
-      if (context.dotPlotConfig.legendGroup) {
-        context.dotPlotConfig.legendGroup.style("display", "none");
-      }
+      context.dotPlotConfig.legendGroup.style("display", "none");
       context.dotPlotConfig.dotsGroup
         .append("text")
         .attr("class", "unsupported-text")
@@ -181,9 +187,7 @@ export class DotPlot {
             .map(function (d) {
               return d["xVar"];
             })
-            .sort(function (x, y) {
-              return d3.ascending(x, y); // sort domain
-            })
+            .sort((x, y) => context.utilsService.sortWithIncomeOrder(x, y, dataset["xVar"]))
         );
         context.dotPlotConfig.xAxis = d3.axisBottom(context.dotPlotConfig.xScale);
         context.dotPlotConfig.xAxisGroup.call(context.dotPlotConfig.xAxis);
@@ -213,9 +217,7 @@ export class DotPlot {
             .map(function (d) {
               return d["yVar"];
             })
-            .sort(function (x, y) {
-              return d3.ascending(x, y); // sort domain
-            })
+            .sort((x, y) => context.utilsService.sortWithIncomeOrder(x, y, dataset["yVar"]))
         );
         context.dotPlotConfig.yAxis = d3.axisLeft(context.dotPlotConfig.yScale);
         context.dotPlotConfig.yAxisGroup.call(context.dotPlotConfig.yAxis);
@@ -273,74 +275,51 @@ export class DotPlot {
       .attr("transform", (d) => {
         const x = context.dotPlotConfig.xScale;
         const y = context.dotPlotConfig.yScale;
-        const dotX = !xIsQ && !xIsNA
-          ? x(d[0].split(binLabelDelim)[0]) + x.bandwidth() / 2
-          : 0.5 * y.bandwidth();
-        const dotY = !yIsQ && !yIsNA
-          ? y(d[0].split(binLabelDelim)[1]) + y.bandwidth() / 2
-          : context.plotHeight - 0.5 * x.bandwidth();
-        return `translate(${dotX}, ${dotY})`;
+        d["x"] =
+          !xIsQ && !xIsNA
+            ? x(d[0].split(binLabelDelim)[0]) + x.bandwidth() / 2 // dist horizontal
+            : 0.5 * y.bandwidth(); // align left
+        d["y"] =
+          !yIsQ && !yIsNA
+            ? y(d[0].split(binLabelDelim)[1]) + y.bandwidth() / 2 // dist vertical
+            : context.plotHeight - 0.5 * x.bandwidth(); // align bottom
+        return `translate(${d["x"]}, ${d["y"]})`;
       })
       .attr("r", (d) => {
-        const maxCount = d3.max(buckets, (bucket) => bucket[1].length);
-        const radiusScale = d3.scaleSqrt().domain([0, maxCount]).range([2, 20]);
-        return radiusScale(d[1].length);
-      })
-      .style("fill", (d, i) => {
-        if (context.global.appType == "CONTROL") return "white";
-        switch (dataset["colorByMode"]) {
-          case "abs":
-            const sumInteracted = d[1].reduce((acc, item) => acc + (item.timesVisited || 0), 0) as number;
-            const sumVisits = prepared.reduce((acc, item) => acc + (item.timesVisited || 0), 0) as number;
-            return sumInteracted == 0
-              ? "white"
-              : context.userConfig.focusSequentialColorScale(sumInteracted / sumVisits);
-          case "rel":
-            const maxInteracted = d[1].reduce((acc, item) => Math.max(acc, item.timesVisited || 0), 0) as number;
-            const maxVisits = prepared.reduce((acc, item) => Math.max(acc, item.timesVisited || 0), 0) as number;
-            return maxInteracted == 0
-              ? "white"
-              : context.userConfig.focusSequentialColorScale(maxInteracted / maxVisits);
-          case "binary":
-            const visited = d[1].some((el) => el["timesVisited"] > 0);
-            return visited
-              ? context.userConfig.focusSequentialColorScale(0.5)
-              : "white";
-          default:
-            return "steelblue";
-        }
-      })
-      .style("stroke", "black")
-      .style("stroke-width", 1);
-    
-    // ENTER text for count labels
-    const offset = 5;
-    enterSelection
-      .append("text")
-      .attr("class", "bubble-count-label")
-      .attr("transform", (d) => {
+        // Calculate radius based on category size with min/max bounds
         const x = context.dotPlotConfig.xScale;
         const y = context.dotPlotConfig.yScale;
-        const dotX = !xIsQ && !xIsNA
-          ? x(d[0].split(binLabelDelim)[0]) + x.bandwidth() / 2
-          : 0.5 * y.bandwidth();
-        const dotY = !yIsQ && !yIsNA
-          ? y(d[0].split(binLabelDelim)[1]) + y.bandwidth() / 2
-          : context.plotHeight - 0.5 * x.bandwidth();
-        return `translate(${dotX}, ${dotY - offset})`;
+        const maxRadius = 0.4 * Math.min(x.bandwidth(), y.bandwidth());
+        const minRadius = 0.1 * Math.min(x.bandwidth(), y.bandwidth());
+        
+        // Create scale based on category counts
+        const allCounts = buckets.map(bucket => bucket[1].length);
+        const maxCount = Math.max(...allCounts);
+        const minCount = Math.min(...allCounts);
+        
+        if (maxCount === minCount) {
+          // All categories have same size, use middle radius
+          return (minRadius + maxRadius) / 2;
+        }
+        
+        // Scale the radius proportionally to the category size
+        const countRange = maxCount - minCount;
+        const radiusRange = maxRadius - minRadius;
+        const normalizedCount = (d[1].length - minCount) / countRange;
+        
+        return minRadius + (normalizedCount * radiusRange);
       })
-      .attr("display", "none")
-      .style("text-anchor", "middle")
-      .style("font-size", "12px")
-      .style("font-weight", "bold")
-      .text((d) => d[1].length);
-
-    // Add interaction handlers to the circles
-    enterSelection
-      .merge(dataBound)
-      .select("circle")
+      .style("fill", (d) => "white")
+      .style("fill-opacity", 0.8)
+      .style("stroke", "black")
+      .style("stroke-width", "1px")
+      .style("stroke-dasharray", (d) => {
+        const countSelected = d[1].filter((o) => o["selected"]).length;
+        return countSelected < d[1].length && countSelected > 0 ? "3" : "none";
+      })
       .style("cursor", "pointer")
       .on("click", function (event, d) {
+        // Record click interaction for all users
         context.utilsService.clickGroup(context, event, {
           aggName: null,
           aggAxis: null,
@@ -348,10 +327,9 @@ export class DotPlot {
           binValue: null,
           binData: d[1],
         });
+        
       })
       .on("mouseover", function (event, d) {
-        // Show the count label
-        d3.select(this.parentNode).select(".bubble-count-label").attr("display", "block");
         context.utilsService.mouseoverGroup(context, event, this, {
           aggName: null,
           aggAxis: null,
@@ -361,8 +339,6 @@ export class DotPlot {
         });
       })
       .on("mouseout", function (event, d) {
-        // Hide the count label
-        d3.select(this.parentNode).select(".bubble-count-label").attr("display", "none");
         context.utilsService.mouseoutGroup(context, event, {
           aggName: null,
           aggAxis: null,
@@ -371,7 +347,6 @@ export class DotPlot {
           binData: d[1],
         });
       });
-
     // FILTER can update `buckets` => must update hovered Objects list
     if (dataset["hoveredObjects"]["binName"]) {
       // binName set => there is a bin visible in details view, reset existing object
@@ -387,7 +362,6 @@ export class DotPlot {
             if (id !== "-") {
               // use dict OBJECT to update source data by reference!
               let dataPoint = originalDatasetDict[id];
-              context.utilsService.colorDataPoint(context, dataPoint, bin[1]);
               dataset["hoveredObjects"]["points"][id] = dataPoint;
             }
           });
