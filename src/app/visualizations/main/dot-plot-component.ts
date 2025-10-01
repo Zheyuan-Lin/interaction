@@ -104,7 +104,9 @@ export class DotPlot {
     if (!originalDatasetDict) return;
 
     // Clear unsupported message
-    context.dotPlotConfig.dotsGroup.select(".unsupported-text").remove();
+    if (context.dotPlotConfig.dotsGroup) {
+      context.dotPlotConfig.dotsGroup.select(".unsupported-text").remove();
+    }
 
     // create raw data object
     let rawData = Object.keys(originalDatasetDict).map((id) => {
@@ -153,7 +155,9 @@ export class DotPlot {
       buckets = []; // ensures no points are drawn
       context.dotPlotConfig.xAxisGroup.selectAll("*").remove();
       context.dotPlotConfig.yAxisGroup.selectAll("*").remove();
-      context.dotPlotConfig.legendGroup.style("display", "none");
+      if (context.dotPlotConfig.legendGroup) {
+        context.dotPlotConfig.legendGroup.style("display", "none");
+      }
       context.dotPlotConfig.dotsGroup
         .append("text")
         .attr("class", "unsupported-text")
@@ -261,6 +265,53 @@ export class DotPlot {
 
     // UPDATE all existing dots
     enterSelection.append("circle");
+    
+    // Style and position the circles
+    enterSelection
+      .merge(dataBound)
+      .select("circle")
+      .attr("transform", (d) => {
+        const x = context.dotPlotConfig.xScale;
+        const y = context.dotPlotConfig.yScale;
+        const dotX = !xIsQ && !xIsNA
+          ? x(d[0].split(binLabelDelim)[0]) + x.bandwidth() / 2
+          : 0.5 * y.bandwidth();
+        const dotY = !yIsQ && !yIsNA
+          ? y(d[0].split(binLabelDelim)[1]) + y.bandwidth() / 2
+          : context.plotHeight - 0.5 * x.bandwidth();
+        return `translate(${dotX}, ${dotY})`;
+      })
+      .attr("r", (d) => {
+        const maxCount = d3.max(buckets, (bucket) => bucket[1].length);
+        const radiusScale = d3.scaleSqrt().domain([0, maxCount]).range([2, 20]);
+        return radiusScale(d[1].length);
+      })
+      .style("fill", (d, i) => {
+        if (context.global.appType == "CONTROL") return "white";
+        switch (dataset["colorByMode"]) {
+          case "abs":
+            const sumInteracted = d[1].reduce((acc, item) => acc + (item.timesVisited || 0), 0) as number;
+            const sumVisits = prepared.reduce((acc, item) => acc + (item.timesVisited || 0), 0) as number;
+            return sumInteracted == 0
+              ? "white"
+              : context.userConfig.focusSequentialColorScale(sumInteracted / sumVisits);
+          case "rel":
+            const maxInteracted = d[1].reduce((acc, item) => Math.max(acc, item.timesVisited || 0), 0) as number;
+            const maxVisits = prepared.reduce((acc, item) => Math.max(acc, item.timesVisited || 0), 0) as number;
+            return maxInteracted == 0
+              ? "white"
+              : context.userConfig.focusSequentialColorScale(maxInteracted / maxVisits);
+          case "binary":
+            const visited = d[1].some((el) => el["timesVisited"] > 0);
+            return visited
+              ? context.userConfig.focusSequentialColorScale(0.5)
+              : "white";
+          default:
+            return "steelblue";
+        }
+      })
+      .style("stroke", "black")
+      .style("stroke-width", 1);
     
     // ENTER text for count labels
     const offset = 5;

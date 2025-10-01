@@ -724,10 +724,12 @@ export class MainActivityComponent implements OnInit, AfterViewInit {
         const yVar = dataset["yVar"];
         const xIsQ = context.utilsService.isMeasure(dataset, xVar, "Q");
         const yIsQ = context.utilsService.isMeasure(dataset, yVar, "Q");
-        if (!(xVar || yVar) || xIsQ || yIsQ) {
-          context.scatterPlotInstance.update();
-        } else {
+        const xIsCat = context.utilsService.isMeasure(dataset, xVar, "N") || context.utilsService.isMeasure(dataset, xVar, "O");
+        const yIsCat = context.utilsService.isMeasure(dataset, yVar, "N") || context.utilsService.isMeasure(dataset, yVar, "O");
+        if (xVar && yVar && xIsCat && yIsCat) {
           context.dotPlotInstance.update();
+        } else {
+          context.scatterPlotInstance.update();
         }
         break;
       case "stripplot":
