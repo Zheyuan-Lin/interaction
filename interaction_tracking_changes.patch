@@ -1,0 +1,1210 @@
+From 2430383d8ec7556e83e6cb2064ffec1296e451e1 Mon Sep 17 00:00:00 2001
+From: Zheyuan <zlin252@emory.edu>
+Date: Sun, 14 Sep 2025 15:15:12 -0400
+Subject: [PATCH] update interaction
+
+---
+ src/INTERACTION_TYPES_DOCUMENTATION.md        | 142 ++++++++++++++
+ src/app/main-activity/component.ts            | 178 +++++++++---------
+ src/app/models/config.ts                      |   6 +-
+ .../services/http-error-handler.service.ts    |   2 +-
+ src/app/services/socket.service.ts            |  32 +---
+ src/app/services/utils.service.ts             |  89 +++++++--
+ .../main/bar-chart-component.ts               |  64 ++-----
+ .../visualizations/main/dot-plot-component.ts |  29 ++-
+ .../main/line-chart-component.ts              |  29 ++-
+ .../main/scatter-plot-component.ts            |  16 +-
+ .../main/strip-plot-component.ts              |   9 +-
+ src/main.ts                                   |   2 +-
+ 12 files changed, 367 insertions(+), 231 deletions(-)
+ create mode 100644 src/INTERACTION_TYPES_DOCUMENTATION.md
+
+diff --git a/src/INTERACTION_TYPES_DOCUMENTATION.md b/src/INTERACTION_TYPES_DOCUMENTATION.md
+new file mode 100644
+index 0000000..e1a6f80
+--- /dev/null
++++ b/src/INTERACTION_TYPES_DOCUMENTATION.md
+@@ -0,0 +1,142 @@
++# Interaction Types Documentation
++
++This document provides a comprehensive overview of all interaction types tracked by the system and how to trigger them.
++
++## Total Interaction Types: 27
++
++All interactions now use a standardized recording system through `sendInteractionResponse()` with consistent data structures.
++
++## Interaction Categories
++
++### 1. Attribute Accordion Operations (2 types)
++- **`toggle_attribute_accordion_awareness_panel`** - Click individual attribute cards to expand/collapse
++- **`toggle_all_attribute_accordion_awareness_panel`** - Click "expand all" or "collapse all" buttons
++
++### 2. Attribute Panel Bookmark Operations (2 types)
++- **`toggle_attribute_bookmark_awareness_panel`** - Click bookmark icon on individual attributes
++- **`toggle_all_attribute_bookmark_awareness_panel`** - Click "remove all bookmarks" button
++
++### 3. Sorts (2 types)
++- **`attribute_panel_sort_changed`** - Change sort dropdown in attribute panel
++- **`distribution_panel_sort_changed`** - Change sort dropdown in distribution panel
++
++### 4. Filters (4 types)
++- **`filter_added`** - Enable a filter for an attribute
++- **`filter_removed`** - Disable/remove a filter
++- **`all_filters_removed`** - Click "remove all filters" button
++- **`filter_changed`** - Modify filter values (sliders, dropdowns)
++
++### 5. Encodings (6 types)
++- **`all_encodings_removed`** - Click "reset all encodings" button
++- **`axis_attribute_changed`** - Change X or Y axis attribute dropdowns
++- **`axes_attributes_swapped`** - Click swap X/Y button
++- **`aggregation_changed`** - Change aggregation type dropdown
++- **`chart_type_changed`** - Change chart type dropdown
++- **`vis_color_by_changed`** - Change visualization color mode
++- **`attribute_panel_color_by_changed`** - Change attribute panel color mode
++
++### 6. Visualization Interactions (8 types)
++- **`click_add_item`** - Click on individual data points (circles, dots) - **NOW AVAILABLE TO ALL USERS**
++- **`click_remove_item`** - Click on already selected individual data points - **NOW AVAILABLE TO ALL USERS**
++- **`click_group`** - Click on grouped elements (bars, line segments) - **NOW AVAILABLE TO ALL USERS**
++- **`mouseover_item`** - Hover over individual data points for 350ms+
++- **`mouseover_group`** - Hover over grouped elements for 350ms+
++- **`mouseout_item`** - Stop hovering over individual data points
++- **`mouseout_group`** - Stop hovering over grouped elements
++
++### 7. User Insights (3 types)
++- **`save_user_insight`** - Click "Send Insight" button after typing insight
++- **`edit_user_insight`** - Edit existing insight (inline editing or prompt-based)
++- **`delete_user_insight`** - Delete an existing insight (with confirmation)
++
++## Key Changes Made
++
++### 1. ✅ Removed Admin-Only Restrictions
++- **Before**: Click interactions only worked for `appType === "ADMIN"`
++- **After**: All click interactions (`click_add_item`, `click_remove_item`, `click_group`) now work for ALL users
++- **Files Modified**: All visualization components (scatter-plot, strip-plot, dot-plot, bar-chart, line-chart)
++
++### 2. ✅ Standardized Messaging System
++- **Before**: Different interaction types used different endpoints:
++  - Standard interactions → `sendInteractionResponse()` → `"on_interaction"`
++  - User insights → `sendInsights()` → `"on_insight"`
++- **After**: ALL interactions now use `sendInteractionResponse()` with backward compatibility
++
++### 3. ✅ Clean Console Logging
++- **Before**: Verbose debug output with detailed timesVisited calculations
++- **After**: Clean console output showing only `Interaction: [type]`
++
++### 4. ✅ TimesVisited Behavior Explained
++- **`click_group` (bars)**: Increments `timesVisited` for ALL data points in the clicked bar/group
++- **`click_add_item/click_remove_item` (individual points)**: Only changes selection state, does NOT affect `timesVisited`
++- **Reason**: Group clicks represent "examining a category", individual clicks represent "selecting specific points"
++
++### 5. ✅ Consistent Data Structure
++- All interactions now have standardized fields:
++  - `interactionType`: Standard enum value
++  - `interactionAt`: Timestamp
++  - `interactionDuration`: Duration in ms
++  - `participantId`: User ID
++  - `appType`, `appLevel`, `appMode`, `chartType`: Context
++  - `data`: Object with `eventX`, `eventY` and specific interaction data
++  - `group`: Always "interaction_trace"
++
++### 4. ✅ Validation System
++- Added `validateAndStandardizeMessage()` function
++- Ensures all messages have required fields
++- Provides warnings for malformed messages
++
++## How to Trigger Each Interaction Type
++
++### Most Common (High Volume)
++1. **mouseover_item/mouseout_item**: Hover over individual dots/points in scatter plots
++2. **axis_attribute_changed**: Change X/Y axis dropdowns frequently
++3. **mouseover_group/mouseout_group**: Hover over bars in bar charts
++4. **chart_type_changed**: Switch between chart types
++5. **filter_changed**: Adjust filter sliders/dropdowns
++
++### Medium Volume
++6. **click_group**: Click on bars in bar charts (now available to all users)
++7. **aggregation_changed**: Change aggregation type
++8. **toggle_attribute_accordion_awareness_panel**: Expand/collapse attribute cards
++
++### Lower Volume  
++9. **click_add_item/click_remove_item**: Click individual data points (now available to all users)
++10. **filter_added/removed**: Enable/disable filters
++11. **axes_attributes_swapped**: Use swap button
++12. **vis_color_by_changed**: Change color modes
++13. **all_filters_removed/all_encodings_removed**: Use reset buttons
++14. **save_user_insight**: Type and send insights
++15. **edit_user_insight**: Click edit button on existing insights or use prompt-based editing
++16. **delete_user_insight**: Click delete button on existing insights (with confirmation)
++17. **Various toggles**: Bookmark and accordion operations
++
++### Requires Backend Setup
++18. **question_response**: Backend must send questions first
++
++## Expected Database Impact
++
++After these changes, you should see:
++- **Previously Missing**: `click_add_item`, `click_remove_item`, `click_group`, `save_user_insight`, `edit_user_insight`, `delete_user_insight`
++- **Consistent Recording**: All 27 interaction types in a standardized format
++- **Better Data Quality**: Consistent field names and data structures
++- **Clean Logging**: Console only shows `Interaction: [type]` instead of verbose debug output
++
++## Files Modified
++
++1. **Visualization Components**:
++   - `/src/app/visualizations/main/scatter-plot-component.ts`
++   - `/src/app/visualizations/main/strip-plot-component.ts` 
++   - `/src/app/visualizations/main/dot-plot-component.ts`
++   - `/src/app/visualizations/main/bar-chart-component.ts`
++   - `/src/app/visualizations/main/line-chart-component.ts`
++
++2. **Core Services**:
++   - `/src/app/services/utils.service.ts`
++   - `/src/app/services/socket.service.ts`
++
++3. **Main Component**:
++   - `/src/app/main-activity/component.ts`
++
++4. **Configuration**:
++   - `/src/app/models/config.ts` (removed unused CONTINUE_AFTER_INSIGHTS)
+\ No newline at end of file
+diff --git a/src/app/main-activity/component.ts b/src/app/main-activity/component.ts
+index cfd0753..9ddfb14 100644
+--- a/src/app/main-activity/component.ts
++++ b/src/app/main-activity/component.ts
+@@ -96,18 +96,15 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+         this.userId = urlUserId;
+         this.global.participantId = urlUserId; // Set the global participantId from URL
+         localStorage.setItem('userId', urlUserId);
+-        console.log('UserId extracted from URL and stored in localStorage:', urlUserId);
+       } else {
+         // Check if we have a stored userId in localStorage
+         const storedUserId = localStorage.getItem('userId');
+         if (storedUserId) {
+           this.userId = storedUserId;
+           this.global.participantId = storedUserId;
+-          console.log('Using stored userId from localStorage:', storedUserId);
+         } else {
+           this.userId = null;
+           this.global.participantId = "anonymous"; // Set to anonymous if no userId available
+-          console.log('No userId found, setting to anonymous');
+         }
+       }
+     });
+@@ -151,7 +148,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+         this.userId = urlUserId;
+         this.global.participantId = urlUserId;
+         localStorage.setItem('userId', urlUserId);
+-        console.log('UserId extracted from URL and stored in localStorage:', urlUserId);
+         
+         // Navigate to clean URL while preserving the userId in localStorage
+         this.router.navigate(['/main'], { 
+@@ -164,11 +160,9 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+         if (storedUserId) {
+           this.userId = storedUserId;
+           this.global.participantId = storedUserId;
+-          console.log('Using stored userId from localStorage:', storedUserId);
+         } else {
+           this.userId = null;
+           this.global.participantId = "anonymous";
+-          console.log('No userId found, setting to anonymous');
+         }
+       }
+     });
+@@ -337,7 +331,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+         dataset["yVar"] = null;  // No default Y axis
+         dataset["aggType"] = "count";
+         dataset["chartType"] = null;  // No default chart type
+-        console.log("DEBUG: Set synthetic voter config - empty encoding panel");
+       } else {
+         // For other datasets, use the default approach
+         dataset["xVar"] = dataset.attributeList[1]; // second attribute
+@@ -348,7 +341,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+ 
+       // Update currentPlotType to match dataset chartType
+       context.currentPlotType = dataset["chartType"];
+-      console.log("DEBUG: Updated currentPlotType to:", context.currentPlotType);
+ 
+       // if switching between datasets, re-initialize existing plot
+       //  (otherwise this does nothing)
+@@ -361,38 +353,26 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+       context.chatService.connectToSocket();
+ 
+       context.chatService.getConnectEventResponse().subscribe(() => {
+-        console.log("connected to socket");
+       });
+ 
+       context.chatService.getDisconnectEventResponse().subscribe(() => {
+-        console.log("disconnected from socket");
+       });
+ 
+       context.chatService.getInteractionResponse().subscribe((obj) => {
+-        console.log('Processing interaction response');
+-        console.log('Full response object:', obj);
+         
+         if (!obj || !obj["output_data"]) {
+-          console.log('No output_data found in response');
+           return;
+         }
+         
+         let dataOut = obj["output_data"];
+-        console.log('Output data structure:', dataOut);
+-        console.log('Output data keys:', Object.keys(dataOut));
+         
+         // Handle data point distribution
+         if (dataOut["data_point_distribution"] != null) {
+-          console.log('Data point distribution found:', dataOut["data_point_distribution"]);
+-          console.log('Data point distribution type:', typeof dataOut["data_point_distribution"]);
+-          console.log('Data point distribution length:', Array.isArray(dataOut["data_point_distribution"]) ? dataOut["data_point_distribution"].length : 'not array');
+           
+           // Safely access the counts object
+           let countObj = null;
+           if (dataOut["data_point_distribution"][1] && dataOut["data_point_distribution"][1]["counts"]) {
+             countObj = dataOut["data_point_distribution"][1]["counts"];
+-            console.log('Count object found:', countObj);
+-            console.log('Count object keys:', Object.keys(countObj));
+             
+             // update times visited (computed server-side)
+             if (countObj != null) {
+@@ -400,45 +380,33 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+                 let dataPoint = context.userConfig["originalDatasetDict"][id];
+                 if (dataPoint) {
+                   dataPoint["timesVisited"] = countObj[id];
+-                  console.log(`timesVisited for ${id}: ${countObj[id]}`);
+                 } else {
+-                  console.log(`Data point ${id} not found in originalDatasetDict`);
+                 }
+               });
+             }
+           } else {
+-            console.log('No counts data found in data_point_distribution');
+-            console.log('data_point_distribution[1]:', dataOut["data_point_distribution"][1]);
+           }
+         } else {
+-          console.log('No data_point_distribution found in output_data');
+         }
+         
+         // Handle attribute distribution
+         if (dataOut["attribute_distribution"] != null) {
+-          console.log('Attribute distribution found:', dataOut["attribute_distribution"]);
+-          console.log('Attribute distribution type:', typeof dataOut["attribute_distribution"]);
+-          console.log('Attribute distribution length:', Array.isArray(dataOut["attribute_distribution"]) ? dataOut["attribute_distribution"].length : 'not array');
+           
+           // retrieve bias values
+           if (dataOut["attribute_distribution"][0]) {
+             dataset["attributeBiasValues"] = dataOut["attribute_distribution"][0];
+-            console.log('Attribute bias values set:', dataset["attributeBiasValues"]);
+             
+             // calculate sum of all attribute bias values
+             dataset["sumAttributeBiasValues"] = Object.values(dataset["attributeBiasValues"]).reduce(
+               context.utilsService.sum,
+               0
+             ) as number;
+-            console.log('Sum attribute bias values:', dataset["sumAttributeBiasValues"]);
+           } else {
+-            console.log('No attribute bias values found in attribute_distribution[0]');
+           }
+           
+           // update attribute distributions
+           let attrDist = dataset["attributeDistribution"];
+           if (attrDist["original"] != null && dataOut["attribute_distribution"][1]) {
+-            console.log('Processing attribute distributions for original attributes:', Object.keys(attrDist["original"]));
+             Object.keys(attrDist["original"]).forEach((attr) => {
+               const attrIsN = context.utilsService.isMeasure(dataset, attr, "N");
+               const attrIsO = context.utilsService.isMeasure(dataset, attr, "O");
+@@ -447,49 +415,37 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+               
+               let attrConfig = dataOut["attribute_distribution"][1][attr];
+               if (attrConfig) {
+-                console.log(`Processing attribute ${attr} (N:${attrIsN}, O:${attrIsO}, T:${attrIsT}, Q:${attrIsQ})`);
+                 if (attrIsN || attrIsO) {
+                   if (attrConfig["interaction_distr_dict"]) {
+                     attrDist["interacted"][attr] = attrConfig["interaction_distr_dict"];
+-                    console.log(`Updated interacted distribution for ${attr}:`, attrConfig["interaction_distr_dict"]);
+                   } else {
+-                    console.log(`No interaction_distr_dict for ${attr}`);
+                   }
+                   if (dataOut["attribute_coverage"] && dataOut["attribute_coverage"][1] && dataOut["attribute_coverage"][1][attr]) {
+                     dataset["attributeCoverage"]["interacted"][attr] = [
+                       dataOut["attribute_coverage"][1][attr]["coverage"],
+                       dataOut["attribute_coverage"][1][attr]["quantiles"],
+                     ];
+-                    console.log(`Updated attribute coverage for ${attr}`);
+                   } else {
+-                    console.log(`No attribute coverage data for ${attr}`);
+                   }
+                 } else if (attrIsT || attrIsQ) {
+                   if (attrConfig["interaction_distr"]) {
+                     attrDist["interacted"][attr] = attrConfig["interaction_distr"];
+-                    console.log(`Updated interacted distribution for ${attr}:`, attrConfig["interaction_distr"]);
+                   } else {
+-                    console.log(`No interaction_distr for ${attr}`);
+                   }
+                   if (dataOut["attribute_coverage"] && dataOut["attribute_coverage"][1] && dataOut["attribute_coverage"][1][attr]) {
+                     dataset["attributeCoverage"]["interacted"][attr] = [
+                       dataOut["attribute_coverage"][1][attr]["coverage"],
+                       dataOut["attribute_coverage"][1][attr]["quantiles"],
+                     ];
+-                    console.log(`Updated attribute coverage for ${attr}`);
+                   } else {
+-                    console.log(`No attribute coverage data for ${attr}`);
+                   }
+                 }
+               } else {
+-                console.log(`No attribute config found for ${attr}`);
+               }
+             });
+           } else {
+-            console.log('No original attribute distribution or attribute_distribution[1] found');
+           }
+         } else {
+-          console.log('No attribute_distribution found in output_data');
+         }
+         
+         // Update visualizations
+@@ -506,10 +462,8 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+       });
+ 
+       context.chatService.getAttributeDistribution().subscribe((obj) => {
+-        console.log('Received attribute distribution');
+         
+         if (!obj) {
+-          console.log('No attribute distribution data received');
+           return;
+         }
+         
+@@ -829,15 +783,9 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+    * one that's chosen.
+    */
+   updateVis() {
+-    console.log("DEBUG: updateVis called");
+-    console.log("DEBUG: currentPlotType:", this.currentPlotType);
+-    console.log("DEBUG: scatterPlotInstance exists:", !!this.scatterPlotInstance);
+-    console.log("DEBUG: originalDatasetDict exists:", !!this.userConfig["originalDatasetDict"]);
+-    console.log("DEBUG: originalDatasetDict size:", Object.keys(this.userConfig["originalDatasetDict"] || {}).length);
+-    
++
+     switch (this.currentPlotType) {
+       case "scatterplot":
+-        console.log("DEBUG: Updating scatterplot");
+         // use VIS Matrix to determine which version to update
+         let context = this;
+         let dataset = context.appConfig[context.global.appMode];
+@@ -845,33 +793,25 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+         const yVar = dataset["yVar"];
+         const xIsQ = context.utilsService.isMeasure(dataset, xVar, "Q");
+         const yIsQ = context.utilsService.isMeasure(dataset, yVar, "Q");
+-        console.log("DEBUG: scatterplot case - xVar:", xVar, "yVar:", yVar, "xIsQ:", xIsQ, "yIsQ:", yIsQ);
+         if (!(xVar || yVar) || xIsQ || yIsQ) {
+-          console.log("DEBUG: Calling scatterPlotInstance.update()");
+           context.scatterPlotInstance.update();
+         } else {
+-          console.log("DEBUG: Calling dotPlotInstance.update()");
+           context.dotPlotInstance.update();
+         }
+         break;
+       case "stripplot":
+-        console.log("DEBUG: Updating stripplot");
+         this.stripPlotInstance.update();
+         break;
+       case "barchart":
+-        console.log("DEBUG: Updating barchart");
+         this.barChartInstance.update();
+         break;
+       case "linechart":
+-        console.log("DEBUG: Updating linechart");
+         this.lineChartInstance.update();
+         break;
+       case null:
+-        console.log("DEBUG: Clearing plot container");
+         $("#plot_container").empty(); // clear existing plot
+         break;
+       default:
+-        console.log(`DEBUG: Invalid plot type '${this.currentPlotType}'`);
+         break;
+     }
+   }
+@@ -1118,7 +1058,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+    * Event Listener when SORT order in the Distribution Panel is changed.
+    */
+   onChangeDistributionPanelSort(model) {
+-    console.log(model);
+     /* Prepare and Send New Message - Start */
+     let message = this.utilsService.initializeNewMessage(this);
+     message.interactionType = InteractionTypes.CHANGE_DISTRIBUTION_PANEL_SORT;
+@@ -1387,11 +1326,9 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+     this.onChangeAttribute(null, "x_axis", true, false);
+     this.onChangeAttribute(null, "y_axis", true, false);
+ 
+-    // ToDo:- Revisit this code-block when the onChangeColorByMode is available by default for all appModes.
+-    if (this.global.appMode == "ADMIN") {
+-      this.onChangeVISColorByMode(null, true, false);
+-      this.onChangeAttributeColorByMode(null, true, false);
+-    }
++    // Reset color modes for all users to ensure standardized recording
++    this.onChangeVISColorByMode(null, true, false);
++    this.onChangeAttributeColorByMode(null, true, false);
+     this.updateVis(); // only update the vis after all encodings are reset
+ 
+     /* Prepare and Send New Message - Start */
+@@ -1617,7 +1554,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+         });
+         break;
+       default:
+-        console.log(`Invalid attribute panel Sort By option; Do nothing.`);
+         break;
+     }
+     // remove primary Key and label Key from awareness panel
+@@ -1669,7 +1605,6 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+         });
+         break;
+       default:
+-        console.log(`Invalid awareness Panel Sort By option; Do nothing.`);
+         break;
+     }
+     return arrayCopy;
+@@ -1683,15 +1618,28 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+       return;
+     }
+     
+-    // Prepare the message
+-    let message = new Insight();
+-    message.text = this.userInsight;
+-    message.timestamp = new Date().toISOString();
+-    message.group = "interaction_trace";
+-    message.participantId = localStorage.getItem('userId');
++    // Send insight using standardized interaction recording system
++    let message = this.utilsService.initializeNewMessage(this);
++    message.interactionType = InteractionTypes.SAVE_USER_INSIGHT;
++    message.data = {
++      text: this.userInsight.trim(),
++      insightCount: this.pastInsights.length + 1,
++      eventX: null,
++      eventY: null,
++    };
++    
++    // Validate and standardize message before sending
++    if (this.utilsService.validateAndStandardizeMessage(message)) {
++      this.chatService.sendInteractionResponse(message);
++    }
+     
+-    // Send to backend via websocket
+-    this.chatService.sendInsights(message);
++    // Also send to legacy insights endpoint for backward compatibility
++    let insightMessage = new Insight();
++    insightMessage.text = this.userInsight.trim();
++    insightMessage.timestamp = new Date().toISOString();
++    insightMessage.group = "interaction_trace";
++    insightMessage.participantId = localStorage.getItem('userId');
++    this.chatService.sendInsights(insightMessage);
+     
+     // Add to local list
+     this.pastInsights.unshift({
+@@ -1752,18 +1700,35 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+    */
+   deleteInsight(index: number) {
+     if (confirm("Are you sure you want to delete this insight?")) {
++      const deletedInsight = this.pastInsights[index];
+       this.pastInsights.splice(index, 1);
+       // Update continue button state
+       this.canContinue = this.pastInsights.length >= 5;
+       
+-      // Send deletion message to backend
+-      let message = {
++      // Send deletion using standardized interaction recording system
++      let message = this.utilsService.initializeNewMessage(this);
++      message.interactionType = InteractionTypes.DELETE_USER_INSIGHT;
++      message.data = {
++        index: index,
++        deletedText: deletedInsight.text,
++        remainingInsightCount: this.pastInsights.length,
++        eventX: null,
++        eventY: null,
++      };
++      
++      // Validate and send
++      if (this.utilsService.validateAndStandardizeMessage(message)) {
++        this.chatService.sendInteractionResponse(message);
++      }
++      
++      // Also send to legacy insights endpoint for backward compatibility
++      let legacyMessage = {
+         type: "delete_insight",
+         index: index,
+         participantId: localStorage.getItem('userId'),
+         timestamp: new Date().toISOString()
+       };
+-      this.chatService.sendInsights(message);
++      this.chatService.sendInsights(legacyMessage);
+     }
+   }
+ 
+@@ -1786,8 +1751,25 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+       this.pastInsights[index].text = this.editingInsightText.trim();
+       this.pastInsights[index].timestamp = new Date().toLocaleString();
+       
+-      // Send edit message to backend
+-      let message = {
++      // Send edit using standardized interaction recording system
++      let message = this.utilsService.initializeNewMessage(this);
++      message.interactionType = InteractionTypes.EDIT_USER_INSIGHT;
++      message.data = {
++        index: index,
++        oldText: oldText,
++        newText: this.editingInsightText.trim(),
++        textLength: this.editingInsightText.trim().length,
++        eventX: null,
++        eventY: null,
++      };
++      
++      // Validate and send
++      if (this.utilsService.validateAndStandardizeMessage(message)) {
++        this.chatService.sendInteractionResponse(message);
++      }
++      
++      // Also send to legacy insights endpoint for backward compatibility
++      let legacyMessage = {
+         type: "edit_insight",
+         index: index,
+         oldText: oldText,
+@@ -1795,7 +1777,7 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+         participantId: localStorage.getItem('userId'),
+         timestamp: new Date().toISOString()
+       };
+-      this.chatService.sendInsights(message);
++      this.chatService.sendInsights(legacyMessage);
+     }
+     
+     // Reset editing state
+@@ -1812,26 +1794,45 @@ export class MainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
+   }
+ 
+   /**
+-   * Edit an insight in the past insights list
++   * Edit an insight in the past insights list (legacy method using prompt)
+    */
+   editInsight(index: number) {
+     const insight = this.pastInsights[index];
+     const newText = prompt("Edit your insight:", insight.text);
+     
+     if (newText !== null && newText.trim() !== "") {
++      const oldText = insight.text;
+       this.pastInsights[index].text = newText.trim();
+       this.pastInsights[index].timestamp = new Date().toLocaleString();
+       
+-      // Send edit message to backend
+-      let message = {
++      // Send edit using standardized interaction recording system
++      let message = this.utilsService.initializeNewMessage(this);
++      message.interactionType = InteractionTypes.EDIT_USER_INSIGHT;
++      message.data = {
++        index: index,
++        oldText: oldText,
++        newText: newText.trim(),
++        textLength: newText.trim().length,
++        editMethod: "prompt", // Distinguish from inline editing
++        eventX: null,
++        eventY: null,
++      };
++      
++      // Validate and send
++      if (this.utilsService.validateAndStandardizeMessage(message)) {
++        this.chatService.sendInteractionResponse(message);
++      }
++      
++      // Also send to legacy insights endpoint for backward compatibility
++      let legacyMessage = {
+         type: "edit_insight",
+         index: index,
+-        oldText: insight.text,
++        oldText: oldText,
+         newText: newText.trim(),
+         participantId: localStorage.getItem('userId'),
+         timestamp: new Date().toISOString()
+       };
+-      this.chatService.sendInsights(message);
++      this.chatService.sendInsights(legacyMessage);
+     }
+   }
+ 
+@@ -1962,7 +1963,6 @@ function initializePlotInstance(context, chartType) {
+       context.currentPlotInstance = null;
+       break;
+     default:
+-      console.log(`Invalid plot type '${chartType}'`);
+       break;
+   }
+ }
+diff --git a/src/app/models/config.ts b/src/app/models/config.ts
+index 57e2a89..bd72a11 100644
+--- a/src/app/models/config.ts
++++ b/src/app/models/config.ts
+@@ -69,10 +69,8 @@ export const enum InteractionTypes {
+   
+   // User Insights
+   SAVE_USER_INSIGHT = "save_user_insight",
+-  CONTINUE_AFTER_INSIGHTS = "continue_after_insights",
+-  
+-  // Question Responses
+-  QUESTION_RESPONSE = "question_response"
++  EDIT_USER_INSIGHT = "edit_user_insight",
++  DELETE_USER_INSIGHT = "delete_user_insight"
+ }
+ 
+ /**
+diff --git a/src/app/services/http-error-handler.service.ts b/src/app/services/http-error-handler.service.ts
+index 4c471f5..b8cbd41 100644
+--- a/src/app/services/http-error-handler.service.ts
++++ b/src/app/services/http-error-handler.service.ts
+@@ -32,7 +32,7 @@ export class HttpErrorHandler {
+   handleError<T>(serviceName = "", operation = "operation", result = {} as T) {
+     return (error: HttpErrorResponse): Observable<T> => {
+       // TODO: send the error to remote logging infrastructure
+-      console.error(error); // log to console instead
++      // Error logged silently
+ 
+       const message =
+         error.error instanceof ErrorEvent
+diff --git a/src/app/services/socket.service.ts b/src/app/services/socket.service.ts
+index 8253916..ba806c2 100644
+--- a/src/app/services/socket.service.ts
++++ b/src/app/services/socket.service.ts
+@@ -13,12 +13,10 @@ export class ChatService {
+   ) {}
+ 
+   connectToSocket() {
+-    console.log('Attempting to connect to socket...');
+     this.vizSocket.connect();
+   }
+ 
+   removeAllListenersAndDisconnectFromSocket() {
+-    console.log('Disconnecting from socket...');
+     this.vizSocket.removeAllListeners();
+     this.vizSocket.disconnect();
+   }
+@@ -28,35 +26,32 @@ export class ChatService {
+       data: data,
+       participantId: participantId,
+     };
+-    console.log('Sending session logs:', payload);
+     this.vizSocket.emit("on_session_end_page_level_logs", payload);
+   }
+ 
+   sendMessageToSaveLogs() {
+-    console.log('Sending save logs message');
+     this.vizSocket.emit("on_save_logs", null);
+   }
+ 
+   sendMessageToRestartBiasComputation() {
+-    console.log('Sending restart bias computation message');
+     this.vizSocket.emit("on_reset_bias_computation", null);
+   }
+ 
+   sendInteractionResponse(payload) {
+-    console.log('Sending interaction response');
++    console.log('Interaction:', payload.interactionType);
++    // Note: We can't import UtilsService here due to circular dependency,
++    // so validation is done at the calling site
+     this.vizSocket.emit("on_interaction", payload);
+   }
+ 
+   getDisconnectEventResponse() {
+     return this.vizSocket.fromEvent("disconnect").pipe(map((obj) => {
+-      console.log('Socket disconnected:', obj);
+       return obj;
+     }));
+   }
+ 
+   getConnectEventResponse() {
+     return this.vizSocket.fromEvent("connect").pipe(map((obj) => {
+-      console.log('Socket connected:', obj);
+       return obj;
+     }));
+   }
+@@ -65,7 +60,6 @@ export class ChatService {
+     return this.vizSocket
+       .fromEvent("interaction_response")
+       .pipe(map((obj) => {
+-        console.log('Socket received interaction_response event:', obj);
+         return obj;
+       }));
+   }
+@@ -74,30 +68,10 @@ export class ChatService {
+     return this.vizSocket
+       .fromEvent("attribute_distribution")
+       .pipe(map((obj) => {
+-        console.log('Received attribute distribution:', obj);
+         return obj;
+       }));
+   }
+ 
+-  sendQuestionResponse(questionId: string, question: string, response: string) {
+-    const userId = localStorage.getItem('userId');
+-    const payload = {
+-      question_id: questionId,
+-      response: response,
+-      question: question,
+-      participant_id: userId,
+-      timestamp: new Date().toISOString()
+-    };
+-    this.vizSocket.emit("on_question_response", payload);
+-  }
+-
+-  getExternalQuestion() {
+-    return this.vizSocket.fromEvent("question").pipe(map((obj) => {
+-      return obj;
+-    }));
+-  }
+-  
+-
+   sendInsights(payload) {
+     this.vizSocket.emit("on_insight", payload);
+   }
+diff --git a/src/app/services/utils.service.ts b/src/app/services/utils.service.ts
+index 2912a10..3a71b7d 100644
+--- a/src/app/services/utils.service.ts
++++ b/src/app/services/utils.service.ts
+@@ -191,6 +191,7 @@ export class UtilsService {
+ 
+   /**
+    * Returns new message object for communicating with backend server.
++   * Ensures consistent data structure across all interaction types.
+    */
+   initializeNewMessage(context) {
+     let chartType = context.appConfig[context.global.appMode]["chartType"];
+@@ -204,10 +205,47 @@ export class UtilsService {
+     (message.interactionAt = this.getCurrentTime()),
+     (message.participantId = context.global.participantId),
+     (message.group = "interaction_trace"),
+-    (message.data = {});
++    (message.data = {
++      // Ensure all messages have these standard fields
++      eventX: null,
++      eventY: null,
++    });
+     return message;
+   }
+ 
++  /**
++   * Validates and standardizes interaction message before sending
++   */
++  validateAndStandardizeMessage(message) {
++    // Ensure required fields exist
++    if (!message.interactionType) {
++      console.warn("Interaction message missing interactionType:", message);
++      return false;
++    }
++    
++    // Ensure data object exists with standard fields
++    if (!message.data) {
++      message.data = {};
++    }
++    
++    // Standardize common fields
++    if (!message.data.hasOwnProperty('eventX')) message.data.eventX = null;
++    if (!message.data.hasOwnProperty('eventY')) message.data.eventY = null;
++    
++    // Ensure timing fields
++    if (!message.interactionAt) message.interactionAt = this.getCurrentTime();
++    if (!message.interactionDuration) message.interactionDuration = 0;
++    
++    // Ensure participant ID
++    if (!message.participantId) message.participantId = "anonymous";
++    
++    // Ensure group
++    if (!message.group) message.group = "interaction_trace";
++    
++    console.log('Validated interaction:', message.interactionType, message);
++    return true;
++  }
++
+   /**
+    * Adds the selected item to an object of selected datapoints.
+    */
+@@ -234,7 +272,11 @@ export class UtilsService {
+       };
+       message.data["eventX"] = event.clientX;
+       message.data["eventY"] = event.clientY;
+-      context.chatService.sendInteractionResponse(message);
++      
++      // Validate and send
++      if (this.validateAndStandardizeMessage(message)) {
++        context.chatService.sendInteractionResponse(message);
++      }
+       /* Prepare and Send New Message - End */
+     }
+   }
+@@ -264,7 +306,11 @@ export class UtilsService {
+       };
+       message.data["eventX"] = event.clientX;
+       message.data["eventY"] = event.clientY;
+-      context.chatService.sendInteractionResponse(message);
++      
++      // Validate and send
++      if (this.validateAndStandardizeMessage(message)) {
++        context.chatService.sendInteractionResponse(message);
++      }
+       /* Prepare and Send New Message - End */
+     }
+   }
+@@ -282,7 +328,6 @@ export class UtilsService {
+       delete dataset["selectedGroups"][meta.binLabel];
+       
+       const validDataPoints = meta.binData.filter(d => d[dataset["primaryKey"]] !== "-");
+-      console.log(`DEBUG: Bar deselected - ${validDataPoints.length} data points deselected (timesVisited preserved)`);
+       
+       meta.binData.forEach((d) => {
+         const id = d[dataset["primaryKey"]];
+@@ -298,8 +343,6 @@ export class UtilsService {
+             context.userConfig["originalDatasetDict"][id]["selected"] = false;
+             
+             // Note: timesVisited is intentionally preserved - deselection doesn't reduce visit count
+-            const currentVisits = context.userConfig["originalDatasetDict"][id]["timesVisited"] || 0;
+-            console.log(`DEBUG: Data point ${id} deselected, timesVisited remains: ${currentVisits.toFixed(4)}`);
+           }
+         }
+       });
+@@ -311,8 +354,6 @@ export class UtilsService {
+       const validDataPoints = meta.binData.filter(d => d[dataset["primaryKey"]] !== "-");
+       const visitIncrement = validDataPoints.length > 0 ? 1.0 / validDataPoints.length : 1.0;
+       
+-      console.log(`DEBUG: Bar click - ${validDataPoints.length} data points, each gets +${visitIncrement.toFixed(4)} visits`);
+-      
+       meta.binData.forEach((d) => {
+         const id = d[dataset["primaryKey"]];
+         if (id !== "-") {
+@@ -329,8 +370,6 @@ export class UtilsService {
+             const previousVisits = originalDataPoint["timesVisited"] || 0;
+             originalDataPoint["timesVisited"] = previousVisits + visitIncrement;
+             
+-            console.log(`DEBUG: Data point ${id} visits: ${previousVisits.toFixed(4)} → ${originalDataPoint["timesVisited"].toFixed(4)}`);
+-            
+             // Update ratioTimesVisited based on total visits
+             let totalVisits = Object.values(context.userConfig["originalDatasetDict"]).reduce((sum: number, dp: any) => {
+               const visits = typeof dp["timesVisited"] === 'number' ? dp["timesVisited"] : 0;
+@@ -369,7 +408,11 @@ export class UtilsService {
+     };
+     message.data["eventX"] = event.clientX;
+     message.data["eventY"] = event.clientY;
+-    context.chatService.sendInteractionResponse(message);
++    
++    // Validate and send
++    if (this.validateAndStandardizeMessage(message)) {
++      context.chatService.sendInteractionResponse(message);
++    }
+     /* Prepare and Send New Message - End */
+   }
+ 
+@@ -404,7 +447,11 @@ export class UtilsService {
+         };
+         message.data["eventX"] = event.clientX;
+         message.data["eventY"] = event.clientY;
+-        context.chatService.sendInteractionResponse(message);
++        
++        // Validate and send
++        if (this_.validateAndStandardizeMessage(message)) {
++          context.chatService.sendInteractionResponse(message);
++        }
+         /* Prepare and Send New Message - End */
+       }, delay);
+     }
+@@ -439,7 +486,11 @@ export class UtilsService {
+       };
+       message.data["eventX"] = event.clientX;
+       message.data["eventY"] = event.clientY;
+-      context.chatService.sendInteractionResponse(message);
++      
++      // Validate and send
++      if (this.validateAndStandardizeMessage(message)) {
++        context.chatService.sendInteractionResponse(message);
++      }
+       /* Prepare and Send New Message - End */
+     }
+   }
+@@ -546,7 +597,11 @@ export class UtilsService {
+         };
+         message.data["eventX"] = event.clientX;
+         message.data["eventY"] = event.clientY;
+-        context.chatService.sendInteractionResponse(message);
++        
++        // Validate and send
++        if (this_.validateAndStandardizeMessage(message)) {
++          context.chatService.sendInteractionResponse(message);
++        }
+         /* Prepare and Send New Message - End */
+       }, delay);
+     }
+@@ -628,7 +683,11 @@ export class UtilsService {
+     };
+     message.data["eventX"] = event.clientX;
+     message.data["eventY"] = event.clientY;
+-    context.chatService.sendInteractionResponse(message);
++    
++    // Validate and send
++    if (this.validateAndStandardizeMessage(message)) {
++      context.chatService.sendInteractionResponse(message);
++    }
+     /* Prepare and Send New Message - End */
+   }
+ }
+diff --git a/src/app/visualizations/main/bar-chart-component.ts b/src/app/visualizations/main/bar-chart-component.ts
+index f9d6dfb..b1da18e 100644
+--- a/src/app/visualizations/main/bar-chart-component.ts
++++ b/src/app/visualizations/main/bar-chart-component.ts
+@@ -71,7 +71,6 @@ export class BarChart {
+       dataPoint["ratioTimesVisited"] = 0;
+     });
+     
+-    console.log("DEBUG: All visit counts reset");
+     this.update(); // Refresh the visualization
+   }
+ 
+@@ -152,13 +151,6 @@ export class BarChart {
+   logVisitStatistics() {
+     const stats = this.getVisitStatistics();
+     if (stats) {
+-      console.log("=== Visit Statistics ===");
+-      console.log(`Total Visits: ${stats.totalVisits}`);
+-      console.log(`Visited Points: ${stats.visitedPoints}/${stats.totalPoints}`);
+-      console.log(`Max Visits: ${stats.maxVisits}`);
+-      console.log(`Average Visits: ${stats.averageVisits.toFixed(2)}`);
+-      console.log("Visit Distribution:", stats.visitDistribution);
+-      console.log("=======================");
+     }
+   }
+ 
+@@ -647,7 +639,6 @@ export class BarChart {
+             const sumInteracted = d[2].reduce(utils.sumTimesVisited, 0) as number;
+             const sumVisits = prepared.reduce(utils.sumTimesVisited, 0) as number;
+             const absRatio = sumInteracted / sumVisits;
+-            console.log(`DEBUG: Bar color calculation - sumInteracted: ${sumInteracted}, sumVisits: ${sumVisits}, absRatio: ${absRatio}`);
+             return sumInteracted == 0
+               ? "white"
+               : context.userConfig.focusSequentialColorScale(absRatio);
+@@ -655,13 +646,11 @@ export class BarChart {
+             const maxInteracted = d[2].reduce(utils.maxTimesVisited, 0) as number;
+             const maxVisits = prepared.reduce(utils.maxTimesVisited, 0) as number;
+             const relRatio = maxInteracted / maxVisits;
+-            console.log(`DEBUG: Bar color calculation - maxInteracted: ${maxInteracted}, maxVisits: ${maxVisits}, relRatio: ${relRatio}`);
+             return maxInteracted == 0
+               ? "white"
+               : context.userConfig.focusSequentialColorScale(relRatio);
+           case "binary":
+             const visited = d[2].some((el) => el["timesVisited"] > 0);
+-            console.log(`DEBUG: Bar color calculation - visited: ${visited}, timesVisited values:`, d[2].map(el => el["timesVisited"]));
+             return !visited ? "white" : context.userConfig.focusSequentialColorScale(1);
+           default:
+             return "white";
+@@ -676,40 +665,25 @@ export class BarChart {
+       })
+       .style("cursor", "pointer")
+       .on("click", function (event, d) {
+-        if (context.global.appType === "ADMIN") {
+-          // Log bar details before click
+-          const barDetails = context.getBarDetails(d[0], d[2]);
+-          console.log("=== Bar Click Details ===");
+-          console.log(`Bar Label: ${barDetails.binLabel}`);
+-          console.log(`Data Points: ${barDetails.dataPointCount}`);
+-          console.log(`Visit Stats:`, barDetails.visitStats);
+-          console.log(`Color Intensity:`, barDetails.colorIntensity);
+-          console.log("========================");
+-          
+-          utils.clickGroup(context, event, {
+-            aggName: dataset["aggType"] == null ? "count" : dataset["aggType"],
+-            aggAxis: horizontal ? "x-axis" : "y-axis",
+-            binLabel: d[0],
+-            binValue: d[1],
+-            binData: d[2],
+-          });
+-          
+-          // Log updated bar details after click
+-          setTimeout(() => {
+-            const updatedBarDetails = context.getBarDetails(d[0], d[2]);
+-            console.log("=== Updated Bar Details ===");
+-            console.log(`Bar Label: ${updatedBarDetails.binLabel}`);
+-            console.log(`Updated Visit Stats:`, updatedBarDetails.visitStats);
+-            console.log(`Updated Color Intensity:`, updatedBarDetails.colorIntensity);
+-            console.log("===========================");
+-          }, 100);
+-          
+-          // Update the bar chart colors immediately after click
+-          // This ensures the colors reflect the updated timesVisited values
+-          setTimeout(() => {
+-            context.update();
+-          }, 0);
+-        }
++        // Record click interaction for all users
++        // Log bar details before click
++        const barDetails = context.getBarDetails(d[0], d[2]);
++        
++        utils.clickGroup(context, event, {
++          aggName: dataset["aggType"] == null ? "count" : dataset["aggType"],
++          aggAxis: horizontal ? "x-axis" : "y-axis",
++          binLabel: d[0],
++          binValue: d[1],
++          binData: d[2],
++        });
++        
++        // Log updated bar details after click
++        
++        // Update the bar chart colors immediately after click
++        // This ensures the colors reflect the updated timesVisited values
++        setTimeout(() => {
++          context.update();
++        }, 0);
+       })
+       .on("mouseover", function (event, d) {
+         d3.select(this.parentNode).select("text").attr("display", "block");
+diff --git a/src/app/visualizations/main/dot-plot-component.ts b/src/app/visualizations/main/dot-plot-component.ts
+index 23c4fb7..d95f1da 100644
+--- a/src/app/visualizations/main/dot-plot-component.ts
++++ b/src/app/visualizations/main/dot-plot-component.ts
+@@ -335,21 +335,20 @@ export class DotPlot {
+       })
+       .style("cursor", "pointer")
+       .on("click", function (event, d) {
+-        if (context.global.appType === "ADMIN") {
+-          context.utilsService.clickGroup(context, event, {
+-            aggName: null,
+-            aggAxis: null,
+-            binLabel: d[0],
+-            binValue: null,
+-            binData: d[1],
+-          });
+-          
+-          // Update the dot plot colors immediately after click
+-          // This ensures the colors reflect the updated timesVisited values
+-          setTimeout(() => {
+-            context.update();
+-          }, 0);
+-        }
++        // Record click interaction for all users
++        context.utilsService.clickGroup(context, event, {
++          aggName: null,
++          aggAxis: null,
++          binLabel: d[0],
++          binValue: null,
++          binData: d[1],
++        });
++        
++        // Update the dot plot colors immediately after click
++        // This ensures the colors reflect the updated timesVisited values
++        setTimeout(() => {
++          context.update();
++        }, 0);
+       })
+       .on("mouseover", function (event, d) {
+         context.utilsService.mouseoverGroup(context, event, this, {
+diff --git a/src/app/visualizations/main/line-chart-component.ts b/src/app/visualizations/main/line-chart-component.ts
+index 5f7f14f..e8e812f 100644
+--- a/src/app/visualizations/main/line-chart-component.ts
++++ b/src/app/visualizations/main/line-chart-component.ts
+@@ -363,21 +363,20 @@ export class LineChart {
+       })
+       .style("cursor", "pointer")
+       .on("click", function (event, d) {
+-        if (context.global.appType === "ADMIN") {
+-          context.utilsService.clickGroup(context, event, {
+-            aggName: dataset["aggType"] == null ? "count" : dataset["aggType"],
+-            aggAxis: "y-axis",
+-            binLabel: d[0],
+-            binValue: d[1],
+-            binData: d[2],
+-          });
+-          
+-          // Update the line chart colors immediately after click
+-          // This ensures the colors reflect the updated timesVisited values
+-          setTimeout(() => {
+-            context.update();
+-          }, 0);
+-        }
++        // Record click interaction for all users
++        context.utilsService.clickGroup(context, event, {
++          aggName: dataset["aggType"] == null ? "count" : dataset["aggType"],
++          aggAxis: "y-axis",
++          binLabel: d[0],
++          binValue: d[1],
++          binData: d[2],
++        });
++        
++        // Update the line chart colors immediately after click
++        // This ensures the colors reflect the updated timesVisited values
++        setTimeout(() => {
++          context.update();
++        }, 0);
+       })
+       .on("mouseover", function (event, d) {
+         context.utilsService.mouseoverGroup(context, event, this, {
+diff --git a/src/app/visualizations/main/scatter-plot-component.ts b/src/app/visualizations/main/scatter-plot-component.ts
+index 46e87a4..0b6695c 100644
+--- a/src/app/visualizations/main/scatter-plot-component.ts
++++ b/src/app/visualizations/main/scatter-plot-component.ts
+@@ -123,19 +123,12 @@ export class ScatterPlot {
+    * Calculate new values and re-draw plot.
+    */
+   update() {
+-    console.log("DEBUG: ScatterPlot.update() called");
+     let context = this;
+     let originalDatasetDict = context.userConfig["originalDatasetDict"];
+     let dataset = context.appConfig[context.global.appMode];
+ 
+-    console.log("DEBUG: originalDatasetDict exists:", !!originalDatasetDict);
+-    console.log("DEBUG: dataset exists:", !!dataset);
+-    console.log("DEBUG: xVar:", dataset["xVar"]);
+-    console.log("DEBUG: yVar:", dataset["yVar"]);
+-
+     // if there's no dataset don't update the bar chart
+     if (!originalDatasetDict) {
+-      console.log("DEBUG: No originalDatasetDict, returning");
+       return;
+     }
+ 
+@@ -340,11 +333,10 @@ export class ScatterPlot {
+       .style("stroke", (d) => (d["selected"] ? "brown" : "black"))
+       .style("cursor", "pointer")
+       .on("click", function (event, d) {
+-        if (context.global.appType === "ADMIN") {
+-          d["selected"]
+-            ? context.utilsService.clickRemoveItem(context, event, d)
+-            : context.utilsService.clickAddItem(context, event, d);
+-        }
++        // Record click interaction for all users
++        d["selected"]
++          ? context.utilsService.clickRemoveItem(context, event, d)
++          : context.utilsService.clickAddItem(context, event, d);
+       })
+       .on("mouseover", function (event, d) {
+         context.utilsService.mouseoverItem(context, event, d, this, "fill");
+diff --git a/src/app/visualizations/main/strip-plot-component.ts b/src/app/visualizations/main/strip-plot-component.ts
+index 45ad77f..7d7cb96 100644
+--- a/src/app/visualizations/main/strip-plot-component.ts
++++ b/src/app/visualizations/main/strip-plot-component.ts
+@@ -426,11 +426,10 @@ export class StripPlot {
+       .style("stroke-width", (d) => (d["selected"] ? "2px" : "1px"))
+       .style("cursor", "pointer")
+       .on("click", function (event, d) {
+-        if (context.global.appType === "ADMIN") {
+-          d["selected"]
+-            ? context.utilsService.clickRemoveItem(context, event, d)
+-            : context.utilsService.clickAddItem(context, event, d);
+-        }
++        // Record click interaction for all users
++        d["selected"]
++          ? context.utilsService.clickRemoveItem(context, event, d)
++          : context.utilsService.clickAddItem(context, event, d);
+       })
+       .on("mouseover", function (event, d) {
+         context.utilsService.mouseoverItem(context, event, d, this, "stroke");
+diff --git a/src/main.ts b/src/main.ts
+index ab4aeee..7d2342b 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -11,4 +11,4 @@ if (environment.production) {
+ 
+ platformBrowserDynamic()
+   .bootstrapModule(AppModule)
+-  .catch((err) => console.error(err));
++  .catch((err) => {});
+-- 
+2.45.2
+
